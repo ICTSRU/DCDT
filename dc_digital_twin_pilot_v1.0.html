@@ -1,0 +1,404 @@
+<title>Data Center Twin Pilot</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
+<style>
+/* Layout concept: SRU-branded operations console. White brand bar, purple-to-blue network band,
+   KPI strip, then a floor plan that drives a rack detail view, a what-if placement tool and alerts. */
+:root{
+  --bg:#f7f5fb; --surface:#ffffff; --ink:#241436; --muted:#6b5a80; --line:rgba(80,30,140,.14);
+  --brand:#501e8c; --brand-d:#3a1464; --brand-l:#f0ebf8; --accent:#501e8c; --blue:#0a6eaa; --blue-l:#e6f3fa;
+  --good:#1b7f4b; --warn:#a85f00; --crit:#c0262d;
+  --c-server:#0a6eaa; --c-storage:#7a3fc2; --c-network:#13817a;
+  --font:"Cairo",Tahoma,Arial,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#150f1f; --surface:#1f1730; --ink:#efe9f8; --muted:#aa9bc0; --line:rgba(190,160,240,.2);
+  --brand:#6b34b8; --brand-l:#2b2042; --accent:#c9b0f7; --blue:#5cb4ea; --blue-l:#16293a;
+  --good:#4cc38a; --warn:#f0a73a; --crit:#ff7b80;
+  --c-server:#5cb4ea; --c-storage:#b794f0; --c-network:#4fd1c5; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#150f1f; --surface:#1f1730; --ink:#efe9f8; --muted:#aa9bc0; --line:rgba(190,160,240,.2);
+  --brand:#6b34b8; --brand-l:#2b2042; --accent:#c9b0f7; --blue:#5cb4ea; --blue-l:#16293a;
+  --good:#4cc38a; --warn:#f0a73a; --crit:#ff7b80;
+  --c-server:#5cb4ea; --c-storage:#b794f0; --c-network:#4fd1c5; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.5}
+.wrap{max-width:1280px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.num{direction:ltr;unicode-bidi:isolate;display:inline-block;font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* brand bar: official placement, university right, ICTD left, in both languages */
+.brandbar{background:#fff;border-bottom:3px solid var(--brand);direction:ltr}
+.brandbar .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-block:10px}
+.mark{display:flex;flex-direction:column;justify-content:center;min-height:40px;line-height:1.15;color:#3a1464}
+.mark b{font-size:15px;font-weight:700}
+.mark small{font-size:10.5px;color:#6b5a80}
+.mark.r{text-align:right}
+
+/* standard SRU tech background: animated network over purple-blue gradient */
+.tech{position:relative;overflow:hidden;color:#fff;background:linear-gradient(110deg,#501e8c,#4a1f8a 45%,#2b3f9e)}
+.tech.dark{background:linear-gradient(110deg,#3a1464,#2e2a80)}
+.tech::before{content:"";position:absolute;inset:0;background-image:var(--net);background-size:520px 200px;background-repeat:repeat;animation:drift 40s linear infinite;pointer-events:none}
+.tech>*{position:relative}
+@keyframes drift{to{background-position-x:-520px}}
+@media (prefers-reduced-motion:reduce){.tech::before{animation:none}}
+
+.band .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding-block:22px}
+.band h1{margin:0;font-size:26px;font-weight:700;line-height:1.2;text-wrap:balance}
+.band p{margin:2px 0 0;opacity:.9}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.45);border-radius:4px;padding:3px 10px;font-size:12px;font-weight:600;background:rgba(255,255,255,.1)}
+.chip.ver{background:#fff;color:#3a1464;border-color:#fff}
+.btn{border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:4px;padding:5px 14px;cursor:pointer;font-weight:600}
+.btn.pri{background:var(--brand);color:#fff;border-color:var(--brand)}
+.band .btn{border-color:#fff;background:transparent;color:#fff}
+.band .btn:hover{background:rgba(255,255,255,.15)}
+
+main{padding-block:20px 32px;display:grid;gap:16px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:12px 14px;min-width:0}
+.kpi .l{color:var(--muted);font-size:12px;font-weight:600}
+.kpi .v{font-size:28px;font-weight:700;line-height:1.2}
+.kpi .v small{font-size:13px;font-weight:600;color:var(--muted);margin-inline-start:4px}
+.kpi .n{color:var(--muted);font-size:12px}
+.meter{height:6px;border-radius:3px;background:var(--brand-l);margin-top:6px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent)}
+.kpi.bad .v{color:var(--crit)}
+
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:16px;align-items:start}
+.col{display:grid;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px 16px;min-width:0}
+.card h2{margin:0 0 10px;font-size:16px;font-weight:700;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.tabs{display:inline-flex;border:1px solid var(--accent);border-radius:4px;overflow:hidden}
+.tabs button{background:transparent;border:0;padding:4px 14px;cursor:pointer;color:var(--accent);font-weight:600}
+.tabs button[aria-pressed="true"]{background:var(--brand);color:#fff}
+.scroll{overflow-x:auto}
+.plan{min-width:640px;direction:ltr}
+.plan svg{display:block;width:100%;height:auto}
+.rk{fill:color-mix(in srgb,var(--st) 16%,var(--surface));stroke:var(--st);stroke-width:1.5}
+.s-good{--st:var(--good)}.s-warn{--st:var(--warn)}.s-crit{--st:var(--crit)}
+g.rack{cursor:pointer}
+g.rack:hover .rk{fill:color-mix(in srgb,var(--st) 28%,var(--surface))}
+g.rack.sel .rk{stroke:var(--accent);stroke-width:3.5}
+.fit{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted);font-size:12px;margin-top:8px;align-items:center}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;border:1.5px solid var(--st);background:color-mix(in srgb,var(--st) 25%,var(--surface));vertical-align:-2px;margin-inline-end:4px}
+
+.pill{display:inline-block;border-radius:4px;padding:0 8px;font-size:11.5px;font-weight:700;border:1px solid var(--st);color:var(--st);background:color-mix(in srgb,var(--st) 12%,var(--surface));white-space:nowrap}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.stat{border:1px solid var(--line);border-radius:4px;padding:6px 10px;background:var(--bg)}
+.stat .l{font-size:11.5px;color:var(--muted);font-weight:600}
+.stat .v{font-size:18px;font-weight:700}
+.detail{display:flex;gap:16px;flex-wrap:wrap}
+.elev{flex:0 0 150px}
+.elev svg{display:block}
+.detail .right{flex:1 1 260px;min-width:0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:start;color:var(--muted);font-size:11.5px;font-weight:600;border-bottom:1px solid var(--line);padding:4px 6px}
+td{padding:5px 6px;border-bottom:1px solid var(--line)}
+td.m{font-family:var(--mono);font-size:12px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-inline-end:6px;vertical-align:-1px}
+
+.form{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:8px}
+.form label{display:grid;gap:2px;font-size:12px;font-weight:600;color:var(--muted)}
+.form input[type=number]{width:96px;padding:5px 8px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink);font:inherit}
+.hint{color:var(--muted);font-size:12px;margin:0 0 8px}
+.best{border:1px solid var(--good);background:color-mix(in srgb,var(--good) 10%,var(--surface));border-radius:4px;padding:8px 12px;margin-bottom:8px}
+.best b{font-size:16px}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:4px;max-height:260px;overflow:auto}
+.list li{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:5px 8px;border:1px solid var(--line);border-radius:4px;flex-wrap:wrap}
+.list button.link{background:none;border:0;color:var(--accent);font-weight:700;cursor:pointer;padding:0;text-decoration:underline}
+.muted{color:var(--muted)}
+.live{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px}
+
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;align-items:center;padding-block:16px;font-size:12.5px}
+footer a{color:#fff;font-weight:700}
+footer .chip{background:rgba(255,255,255,.14)}
+
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.band h1{font-size:21px}.stats{grid-template-columns:1fr 1fr 1fr}.stat .v{font-size:16px}}
+</style>
+
+<header>
+  <div class="brandbar"><div class="wrap">
+    <div class="mark"><b>ICTD</b><small>Communications &amp; Information Technology</small></div>
+    <div class="mark r"><b>Sulaiman Al Rajhi University</b><small>جامعة سليمان الراجحي</small></div>
+  </div></div>
+  <div class="band tech"><div class="wrap">
+    <div>
+      <h1 data-i="title">Data Center Digital Twin</h1>
+      <p data-i="sub">Pilot room, sample data</p>
+    </div>
+    <div class="chips">
+      <span class="chip ver">v1.0</span>
+      <span class="chip" data-i="sample">Sample data</span>
+      <button class="btn" id="lang" type="button">العربية</button>
+    </div>
+  </div></div>
+</header>
+
+<main class="wrap">
+  <section class="kpis" id="kpis" aria-live="polite"></section>
+  <div class="grid">
+    <div class="col">
+      <section class="card">
+        <h2><span data-i="planTitle">Floor plan</span>
+          <span class="tabs" role="group">
+            <button type="button" data-metric="power" aria-pressed="true" data-i="mPower">Power</button>
+            <button type="button" data-metric="temp" aria-pressed="false" data-i="mTemp">Temperature</button>
+            <button type="button" data-metric="space" aria-pressed="false" data-i="mSpace">Space</button>
+          </span>
+        </h2>
+        <div class="scroll"><div class="plan" id="plan"></div></div>
+        <div class="legend" id="legend"></div>
+        <div class="live" style="margin-top:8px">
+          <label><input type="checkbox" id="live"> <span data-i="live">Simulate live feed</span></label>
+          <span id="fresh"></span>
+        </div>
+      </section>
+      <section class="card" id="detail"></section>
+    </div>
+    <div class="col">
+      <section class="card">
+        <h2 data-i="wiTitle">Where can this device go?</h2>
+        <div class="form">
+          <label><span data-i="wiU">Height (U)</span><input type="number" id="wu" min="1" max="42" step="1" value="2"></label>
+          <label><span data-i="wiKw">Power draw (kW)</span><input type="number" id="wk" min="0.1" max="6" step="0.1" value="0.9"></label>
+          <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="showfit" checked><span data-i="wiShow">Show on floor plan</span></label>
+        </div>
+        <p class="hint" data-i="wiHint"></p>
+        <div id="wi"></div>
+      </section>
+      <section class="card"><h2 data-i="alTitle">Alerts</h2><ul class="list" id="alerts"></ul></section>
+      <section class="card"><h2 data-i="srcTitle">Data sources</h2><div class="scroll"><table id="src"></table></div></section>
+    </div>
+  </div>
+</main>
+
+<footer class="tech dark">
+  <div class="wrap">
+    <span data-i="foot">Prototype with sample data. Not connected to production systems.</span>
+    <span style="display:flex;gap:12px;align-items:center">
+      <span class="chip">v1.0</span>
+      <a href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener">ITOC · IT Operations Center</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+(function(){
+const net="<svg xmlns='http://www.w3.org/2000/svg' width='520' height='200' viewBox='0 0 520 200'><g stroke='#8fd3ff' stroke-opacity='.35' stroke-width='1' fill='none'><path d='M0 100L30 40L120 120L210 50L300 150L390 70L470 140L520 100'/><path d='M0 170L80 170L120 120'/><path d='M210 50L250 100L300 150'/><path d='M390 70L430 20L470 140'/><path d='M520 170L470 140'/></g><g fill='#fff' fill-opacity='.8'><circle cx='30' cy='40' r='2.5'/><circle cx='120' cy='120' r='2.5'/><circle cx='210' cy='50' r='2.5'/><circle cx='300' cy='150' r='2.5'/><circle cx='390' cy='70' r='2.5'/><circle cx='470' cy='140' r='2.5'/><circle cx='80' cy='170' r='2'/><circle cx='250' cy='100' r='2'/><circle cx='430' cy='20' r='2'/></g></svg>";
+document.documentElement.style.setProperty('--net','url("data:image/svg+xml,'+encodeURIComponent(net)+'")');
+
+/* ---- assumptions (sample, to be replaced in Phase 1) ---- */
+const CAP=6, PLAN=0.8, TLIM=26, TWARN=27, TCRIT=32, U=42;
+const RAW=[
+['A01',24.1,0,[['core-sw-01','network',41,2,.4],['fw-01','network',39,2,.5],['esx-01','server',30,2,.9],['esx-02','server',28,2,.9],['esx-03','server',26,2,.9],['san-01','storage',10,4,1.4]]],
+['A02',24.8,0,[['esx-04','server',36,2,.9],['esx-05','server',34,2,.9],['esx-06','server',32,2,.9],['esx-07','server',30,2,.9],['erp-app-01','server',24,2,.8]]],
+['A03',28.6,0,[['esx-08','server',38,2,1],['esx-09','server',36,2,1],['esx-10','server',34,2,1],['gpu-01','server',28,4,1.8],['backup-01','storage',16,4,.8]]],
+['A04',23.2,0,[['esx-11','server',36,2,.9],['esx-12','server',34,2,.9],['nas-01','storage',20,4,.8]]],
+['A05',23.6,0,[['tor-sw-05','network',41,1,.2],['esx-13','server',30,2,.9],['esx-14','server',28,2,.9],['mon-01','server',22,1,.3],['mgmt-sw','network',2,1,.1]]],
+['B01',25.2,0,[['dist-sw-01','network',41,2,.5],['esx-15','server',32,2,.9],['esx-16','server',30,2,.9],['erp-db-02','server',22,4,1.6]]],
+['B02',26.9,0,[['esx-17','server',38,2,1],['esx-18','server',36,2,1],['esx-19','server',34,2,1],['esx-20','server',32,2,1],['san-02','storage',12,4,1.2]]],
+['B03',22.0,0,[['idm-01','server',30,1,.3],['dns-01','server',29,1,.2],['jump-01','server',28,1,.3]]],
+['B04',24.0,1,[['esx-21','server',36,2,.9],['esx-22','server',34,2,.9],['esx-23','server',32,2,.9],['tape-01','storage',14,4,.7]]],
+['B05',22.8,0,[['web-01','server',36,1,.3],['web-02','server',35,1,.3],['app-02','server',30,2,.7]]]
+];
+const racks=RAW.map(([id,t,st,dv])=>({id,row:id[0],col:+id.slice(1)-1,baseT:t,inlet:t,stale:!!st,
+  devs:dv.map(([n,ty,u,h,kw])=>({n,ty,u,h,baseKw:kw,kw}))}));
+function calc(r){
+  r.kw=r.devs.reduce((a,d)=>a+d.kw,0); r.used=r.devs.reduce((a,d)=>a+d.h,0);
+  r.pct=r.kw/CAP*100; r.free=U-r.used;
+  const occ=Array(U+2).fill(0); r.devs.forEach(d=>{for(let i=d.u;i<d.u+d.h;i++)occ[i]=1});
+  let run=0,best=0; for(let i=1;i<=U;i++){ if(occ[i]) run=0; else {run++; best=Math.max(best,run)} } r.block=best;
+}
+racks.forEach(calc);
+
+/* ---- text (EN / AR) ---- */
+const I={
+en:{title:'Data Center Digital Twin',sub:'Pilot room, sample data',sample:'Sample data',planTitle:'Floor plan: Row A and Row B',
+ mPower:'Power',mTemp:'Temperature',mSpace:'Space',aisle:'Cold aisle',live:'Simulate live feed',
+ wiTitle:'Where can this device go?',wiU:'Height (U)',wiKw:'Power draw (kW)',wiShow:'Show on floor plan',
+ wiHint:'Planning limits: rack power up to 80% of 6 kW, inlet temperature 26 °C or lower, enough contiguous U.',
+ alTitle:'Alerts',srcTitle:'Data sources',foot:'Prototype with sample data. Not connected to production systems.',
+ kLoad:'IT load',kHead:'Power headroom',kSpace:'Free rack space',kTemp:'Hottest inlet',kAlerts:'Open alerts',
+ kLoadN:c=>`of ${c} kW rack capacity`,kHeadN:'to the 80% planning limit',kSpaceN:t=>`of ${t} U in the room`,kTempN:'Recommended range 18 to 27 °C',kAlertsN:c=>`${c} critical`,
+ good:'Normal',warn:'Warning',crit:'Critical',rack:'Rack',detail:'Rack detail',power:'Power',inlet:'Inlet temp',space:'Space',
+ device:'Device',type:'Type',u:'U',kw:'kW',server:'Server',storage:'Storage',network:'Network',
+ thP:'Warning at 80%, critical at 90% of rack power',thT:'Warning at 27 °C, critical at 32 °C inlet',thS:'Warning at 75%, critical at 90% of 42 U used',fitKey:'Dashed outline: fits the device in the placement tool',
+ best:'Best fit',noFit:'No rack fits. Try a smaller device or add capacity.',after:'after placement',
+ rSpace:'not enough contiguous U',rPower:'not enough power',rTemp:'inlet too warm',fits:'Fits',freeU:'free U',
+ aPower:(p)=>`Power at ${p}% of rack capacity`,aTemp:(t)=>`Inlet temperature ${t} °C`,aStale:(m)=>`No PDU data for ${m} min, showing last reading`,
+ open:'Open',updated:s=>`Updated ${s} s ago`,snap:'Static sample snapshot',
+ sName:'Source',sProto:'Protocol',sStat:'Status',live_:'Live',stale_:'Stale',planned_:'Planned',
+ src:[['Rack PDUs','SNMP','sample'],['Inlet sensors','Modbus / MQTT','sample'],['UPS and ATS','SNMP','planned'],['CRAC units','Modbus','planned'],['Monitoring platform','API','planned'],['Asset inventory','NetBox seed','planned'],['Visitor log','Google Sheet','planned']],
+ ofRacks:(n,t)=>`${n} of ${t} reporting`},
+ar:{title:'التوأم الرقمي لمركز البيانات',sub:'قاعة التجربة، بيانات تجريبية',sample:'بيانات تجريبية',planTitle:'مخطط القاعة: الصف A والصف B',
+ mPower:'الطاقة',mTemp:'الحرارة',mSpace:'المساحة',aisle:'الممر البارد',live:'محاكاة التغذية الحية',
+ wiTitle:'أين يمكن تركيب هذا الجهاز؟',wiU:'الارتفاع (U)',wiKw:'استهلاك الطاقة (kW)',wiShow:'إظهار على المخطط',
+ wiHint:'حدود التخطيط: طاقة الرف حتى 80% من 6 kW، وحرارة الدخل 26 °م أو أقل، ومساحة متصلة كافية.',
+ alTitle:'التنبيهات',srcTitle:'مصادر البيانات',foot:'نموذج أولي ببيانات تجريبية، غير متصل بأنظمة التشغيل.',
+ kLoad:'الحمل التشغيلي',kHead:'هامش الطاقة',kSpace:'المساحة الحرة في الرفوف',kTemp:'أعلى حرارة دخل',kAlerts:'تنبيهات مفتوحة',
+ kLoadN:c=>`من سعة ${c} kW للرفوف`,kHeadN:'حتى حد التخطيط 80%',kSpaceN:t=>`من ${t} U في القاعة`,kTempN:'النطاق الموصى به 18 إلى 27 °م',kAlertsN:c=>`${c} حرجة`,
+ good:'طبيعي',warn:'تحذير',crit:'حرج',rack:'رف',detail:'تفاصيل الرف',power:'الطاقة',inlet:'حرارة الدخل',space:'المساحة',
+ device:'الجهاز',type:'النوع',u:'U',kw:'kW',server:'خادم',storage:'تخزين',network:'شبكة',
+ thP:'تحذير عند 80% وحرج عند 90% من طاقة الرف',thT:'تحذير عند 27 °م وحرج عند 32 °م لحرارة الدخل',thS:'تحذير عند 75% وحرج عند 90% من 42 U',fitKey:'الإطار المتقطع: الرف يناسب الجهاز في أداة التخطيط',
+ best:'أفضل موقع',noFit:'لا يناسب أي رف. جرّب جهازاً أصغر أو أضف سعة.',after:'بعد التركيب',
+ rSpace:'لا توجد مساحة متصلة كافية',rPower:'الطاقة غير كافية',rTemp:'حرارة الدخل مرتفعة',fits:'مناسب',freeU:'U حرة',
+ aPower:(p)=>`الطاقة عند ${p}% من سعة الرف`,aTemp:(t)=>`حرارة الدخل ${t} °م`,aStale:(m)=>`لا بيانات من وحدة الطاقة منذ ${m} دقيقة، تُعرض آخر قراءة`,
+ open:'فتح',updated:s=>`آخر تحديث قبل ${s} ث`,snap:'لقطة تجريبية ثابتة',
+ sName:'المصدر',sProto:'البروتوكول',sStat:'الحالة',live_:'مباشر',stale_:'متأخر',planned_:'مخطط',
+ src:[['وحدات الطاقة في الرفوف','SNMP','sample'],['حساسات حرارة الدخل','Modbus / MQTT','sample'],['UPS وATS','SNMP','planned'],['وحدات التبريد CRAC','Modbus','planned'],['منصة المراقبة','API','planned'],['جرد الأصول','NetBox','planned'],['سجل الزوار','Google Sheet','planned']],
+ ofRacks:(n,t)=>`${n} من ${t} ترسل البيانات`}
+};
+const S={lang:'en',metric:'power',sel:'A03',live:false,t0:Date.now()};
+const t=k=>I[S.lang][k];
+const num=x=>`<span class="num">${x}</span>`;
+const $=id=>document.getElementById(id);
+
+function stateOf(m,v){
+  if(m==='power') return v>=90?'crit':v>=80?'warn':'good';
+  if(m==='temp') return v>=TCRIT?'crit':v>=TWARN?'warn':'good';
+  return v>=90?'crit':v>=75?'warn':'good';
+}
+function metricVal(r,m){return m==='power'?r.pct:m==='temp'?r.inlet:r.used/U*100}
+function alerts(){
+  const a=[];
+  racks.forEach(r=>{
+    const sp=stateOf('power',r.pct); if(sp!=='good') a.push({sev:sp,k:'power',r:r.id,v:Math.round(r.pct)});
+    const st=stateOf('temp',r.inlet); if(st!=='good') a.push({sev:st,k:'temp',r:r.id,v:r.inlet.toFixed(1)});
+    if(r.stale) a.push({sev:'warn',k:'stale',r:r.id,v:12});
+  });
+  return a.sort((x,y)=>(y.sev==='crit')-(x.sev==='crit'));
+}
+function evalFit(r,u,kw){
+  const why=[];
+  if(r.block<u) why.push('rSpace');
+  if(r.kw+kw>CAP*PLAN+1e-9) why.push('rPower');
+  if(r.inlet>TLIM) why.push('rTemp');
+  return why;
+}
+function fitList(){
+  const u=Math.max(1,Math.min(42,+$('wu').value||1)), kw=Math.max(0.1,+$('wk').value||0.1);
+  return racks.map(r=>({r,why:evalFit(r,u,kw),left:CAP*PLAN-(r.kw+kw)}))
+    .sort((a,b)=>(a.why.length-b.why.length)||(b.left-a.left));
+}
+
+function renderKpis(){
+  const load=racks.reduce((a,r)=>a+r.kw,0), cap=CAP*racks.length;
+  const head=racks.reduce((a,r)=>a+Math.max(0,CAP*PLAN-r.kw),0);
+  const free=racks.reduce((a,r)=>a+r.free,0), hot=Math.max(...racks.map(r=>r.inlet));
+  const al=alerts(), crit=al.filter(x=>x.sev==='crit').length;
+  $('kpis').innerHTML=
+   `<div class="kpi"><div class="l">${t('kLoad')}</div><div class="v">${num(load.toFixed(1))}<small>kW</small></div><div class="n">${t('kLoadN')(cap)}</div><div class="meter"><i style="width:${Math.min(100,load/cap*100)}%"></i></div></div>`+
+   `<div class="kpi"><div class="l">${t('kHead')}</div><div class="v">${num(head.toFixed(1))}<small>kW</small></div><div class="n">${t('kHeadN')}</div></div>`+
+   `<div class="kpi"><div class="l">${t('kSpace')}</div><div class="v">${num(free)}<small>U</small></div><div class="n">${t('kSpaceN')(U*racks.length)}</div></div>`+
+   `<div class="kpi ${hot>=TWARN?'bad':''}"><div class="l">${t('kTemp')}</div><div class="v">${num(hot.toFixed(1))}<small>°C</small></div><div class="n">${t('kTempN')}</div></div>`+
+   `<div class="kpi ${crit?'bad':''}"><div class="l">${t('kAlerts')}</div><div class="v">${num(al.length)}</div><div class="n">${t('kAlertsN')(crit)}</div></div>`;
+}
+
+function renderPlan(){
+  const W=112,H=80,gap=16,x0=84,yA=60,yB=224, m=S.metric;
+  const fits=$('showfit').checked?new Set(fitList().filter(f=>!f.why.length).map(f=>f.r.id)):new Set();
+  let s=`<svg viewBox="0 0 760 344" role="img" aria-label="${t('planTitle')}" font-family="Cairo,Tahoma,Arial,sans-serif">`;
+  s+=`<rect x="24" y="30" width="712" height="300" rx="4" fill="none" stroke="var(--muted)" stroke-width="1.5"/>`;
+  s+=`<text x="36" y="50" font-size="12" font-weight="700" fill="var(--muted)">ROW A</text><text x="36" y="322" font-size="12" font-weight="700" fill="var(--muted)">ROW B</text>`;
+  [['CRAC 1',yA],['CRAC 2',yB]].forEach(([n,y])=>{
+    s+=`<rect x="36" y="${y}" width="34" height="${H}" rx="3" fill="var(--blue-l)" stroke="var(--blue)" stroke-width="1.2"/><text x="53" y="${y+H/2}" font-size="11" font-weight="700" fill="var(--blue)" text-anchor="middle" transform="rotate(-90 53 ${y+H/2})" dy="4">${n}</text>`;
+  });
+  s+=`<rect x="${x0}" y="148" width="${5*W+4*gap}" height="68" fill="var(--blue-l)" opacity=".7"/>`;
+  s+=`<text x="${x0+(5*W+4*gap)/2}" y="186" font-size="13" font-weight="600" fill="var(--blue)" text-anchor="middle">${t('aisle')}</text>`;
+  s+=`<text x="${x0+(5*W+4*gap)/2}" y="204" font-size="16" fill="var(--blue)" text-anchor="middle">↑ ↓</text>`;
+  racks.forEach(r=>{
+    const x=x0+r.col*(W+gap), y=r.row==='A'?yA:yB, v=metricVal(r,m), st=stateOf(m,v);
+    const main=m==='power'?Math.round(v)+'%':m==='temp'?v.toFixed(1)+'°':r.used+'/'+U+'U';
+    const sub=m==='power'?r.kw.toFixed(1)+' / '+CAP.toFixed(1)+' kW':m==='temp'?'inlet °C':r.free+' U free';
+    s+=`<g class="rack s-${st}${S.sel===r.id?' sel':''}" data-rack="${r.id}" tabindex="0" role="button" aria-label="${t('rack')} ${r.id}: ${main}">`+
+       `<rect class="rk" x="${x}" y="${y}" width="${W}" height="${H}" rx="4"/>`+
+       `<text x="${x+10}" y="${y+20}" font-size="13" font-weight="700" fill="var(--ink)">${r.id}${r.stale?' ⚠':''}</text>`+
+       `<text x="${x+W/2}" y="${y+50}" font-size="22" font-weight="700" fill="var(--ink)" text-anchor="middle">${main}</text>`+
+       `<text x="${x+W/2}" y="${y+68}" font-size="11.5" fill="var(--muted)" text-anchor="middle">${sub}</text>`;
+    if(fits.has(r.id)) s+=`<rect class="fit" x="${x-4}" y="${y-4}" width="${W+8}" height="${H+8}" rx="6"/>`;
+    s+=`</g>`;
+  });
+  s+=`</svg>`;
+  $('plan').innerHTML=s;
+  const th=m==='power'?t('thP'):m==='temp'?t('thT'):t('thS');
+  $('legend').innerHTML=`<span class="s-good"><i class="sw"></i>${t('good')}</span><span class="s-warn"><i class="sw"></i>${t('warn')}</span><span class="s-crit"><i class="sw"></i>${t('crit')}</span><span>${th}</span>`+($('showfit').checked?`<span>${t('fitKey')}</span>`:'');
+}
+
+function renderDetail(){
+  const r=racks.find(x=>x.id===S.sel), sp=stateOf('power',r.pct), st=stateOf('temp',r.inlet), ss=stateOf('space',r.used/U*100);
+  const col={server:'var(--c-server)',storage:'var(--c-storage)',network:'var(--c-network)'};
+  let e=`<svg width="150" height="${U*8+8}" viewBox="0 0 150 ${U*8+8}" role="img" aria-label="${t('rack')} ${r.id} 42U" font-family="Cairo,Tahoma,Arial,sans-serif" style="direction:ltr"><rect x="30" y="2" width="112" height="${U*8+4}" rx="3" fill="var(--bg)" stroke="var(--muted)"/>`;
+  for(let i=1;i<U;i++) e+=`<line x1="30" x2="142" y1="${2+i*8+2}" y2="${2+i*8+2}" stroke="var(--line)"/>`;
+  for(let u=U;u>=1;u-=6) e+=`<text x="26" y="${4+(U-u)*8+7}" font-size="9.5" fill="var(--muted)" text-anchor="end">${u}</text>`;
+  r.devs.forEach(d=>{const top=d.u+d.h-1; e+=`<rect x="32" y="${4+(U-top)*8}" width="108" height="${d.h*8-1}" rx="2" fill="color-mix(in srgb,${col[d.ty]} 45%,var(--surface))" stroke="${col[d.ty]}"/>`});
+  e+=`</svg>`;
+  const rows=[...r.devs].sort((a,b)=>b.u-a.u).map(d=>`<tr><td><i class="dot" style="background:${col[d.ty]}"></i>${d.n}</td><td>${t(d.ty)}</td><td class="m">${d.h>1?d.u+'-'+(d.u+d.h-1):d.u}</td><td class="m">${d.kw.toFixed(1)}</td></tr>`).join('');
+  $('detail').innerHTML=`<h2><span>${t('detail')}: ${t('rack')} ${r.id}</span><span><span class="pill s-${sp}">${t('power')}: ${t(sp)}</span> <span class="pill s-${st}">${t('inlet')}: ${t(st)}</span></span></h2>`+
+   `<div class="detail"><div class="elev">${e}</div><div class="right">`+
+   `<div class="stats"><div class="stat"><div class="l">${t('power')}</div><div class="v">${num(r.kw.toFixed(1)+' / '+CAP.toFixed(1))}<small class="muted"> kW</small></div></div>`+
+   `<div class="stat"><div class="l">${t('inlet')}</div><div class="v">${num(r.inlet.toFixed(1))}<small class="muted"> °C</small></div></div>`+
+   `<div class="stat"><div class="l">${t('space')}</div><div class="v">${num(r.used+' / '+U)}<small class="muted"> U</small></div></div></div>`+
+   `<div class="scroll"><table><thead><tr><th>${t('device')}</th><th>${t('type')}</th><th>${t('u')}</th><th>${t('kw')}</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
+}
+
+function renderWi(){
+  const f=fitList(), ok=f.filter(x=>!x.why.length);
+  let h='';
+  if(ok.length){const b=ok[0]; h+=`<div class="best"><div class="muted" style="font-size:12px;font-weight:600">${t('best')}</div><b>${t('rack')} ${b.r.id}</b> <span class="muted">${num(b.left.toFixed(1))} kW ${t('after')}</span></div>`}
+  else h+=`<div class="best" style="border-color:var(--crit);background:color-mix(in srgb,var(--crit) 10%,var(--surface))">${t('noFit')}</div>`;
+  h+='<ul class="list">'+f.map(x=>`<li><span><button class="link" type="button" data-rack="${x.r.id}">${t('rack')} ${x.r.id}</button> <span class="muted">${num(x.r.block)} ${t('freeU')}</span></span>`+
+    (x.why.length?`<span class="pill s-crit">${x.why.map(k=>t(k)).join(', ')}</span>`:`<span class="pill s-good">${t('fits')}</span>`)+`</li>`).join('')+'</ul>';
+  $('wi').innerHTML=h;
+}
+
+function renderAlerts(){
+  $('alerts').innerHTML=alerts().map(a=>{
+    const msg=a.k==='power'?I[S.lang].aPower(a.v):a.k==='temp'?I[S.lang].aTemp(a.v):I[S.lang].aStale(a.v);
+    return `<li><span><span class="pill s-${a.sev}">${t(a.sev)}</span> <button class="link" type="button" data-rack="${a.r}">${t('rack')} ${a.r}</button></span><span>${msg}</span></li>`;
+  }).join('');
+}
+
+function renderSrc(){
+  const live=racks.filter(r=>!r.stale).length;
+  const stat=(k,i)=>k==='sample'?(i===0?`<span class="pill s-warn">${t('ofRacks')(live,racks.length)}</span>`:`<span class="pill s-good">${t('live_')}</span>`):`<span class="pill" style="--st:var(--muted)">${t('planned_')}</span>`;
+  $('src').innerHTML=`<thead><tr><th>${t('sName')}</th><th>${t('sProto')}</th><th>${t('sStat')}</th></tr></thead><tbody>`+
+    t('src').map((x,i)=>`<tr><td>${x[0]}</td><td class="m">${x[1]}</td><td>${stat(x[2],i)}</td></tr>`).join('')+'</tbody>';
+}
+
+function renderAll(){renderKpis();renderPlan();renderDetail();renderWi();renderAlerts();renderSrc();updFresh()}
+function updFresh(){ $('fresh').textContent=S.live?t('updated')(Math.round((Date.now()-S.t0)/1000)):t('snap'); }
+function applyLang(){
+  const L=S.lang; document.documentElement.lang=L; document.documentElement.dir=L==='ar'?'rtl':'ltr';
+  document.querySelectorAll('[data-i]').forEach(el=>{el.textContent=t(el.dataset.i)});
+  $('lang').textContent=L==='ar'?'English':'العربية';
+  renderAll();
+}
+function tick(){
+  racks.forEach(r=>{
+    if(!r.stale){const f=1+(Math.random()-.5)*.06; r.devs.forEach(d=>d.kw=d.baseKw*f)}
+    r.inlet=r.baseT+(Math.random()-.5)*.6; calc(r);
+  });
+  S.t0=Date.now(); renderAll();
+}
+setInterval(()=>{ if(S.live) tick(); },3000);
+setInterval(updFresh,1000);
+
+document.addEventListener('click',e=>{
+  const rk=e.target.closest('[data-rack]'); if(rk){S.sel=rk.dataset.rack;renderPlan();renderDetail();return}
+  const mt=e.target.closest('[data-metric]'); if(mt){S.metric=mt.dataset.metric;document.querySelectorAll('[data-metric]').forEach(b=>b.setAttribute('aria-pressed',String(b===mt)));renderPlan();return}
+  if(e.target.id==='lang'){S.lang=S.lang==='en'?'ar':'en';applyLang()}
+});
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('g.rack')){e.preventDefault();S.sel=e.target.dataset.rack;renderPlan();renderDetail()}
+});
+['wu','wk','showfit'].forEach(id=>$(id).addEventListener('input',()=>{renderWi();renderPlan()}));
+$('live').addEventListener('change',e=>{S.live=e.target.checked;S.t0=Date.now();if(!S.live){racks.forEach(r=>{r.devs.forEach(d=>d.kw=d.baseKw);r.inlet=r.baseT;calc(r)});renderAll()}else updFresh()});
+applyLang();
+})();
+</script>
