@@ -2,6 +2,9 @@
 
 Versioning: one digit after the decimal point; after x.9 comes (x+1).0.
 
+## v2.8
+- Fix: page script failed to parse inside Apps Script (`Unexpected identifier 'dir'`, line 512). Removed inline `dir=` attributes from script templates (CSS class `.ltr` instead) and the escape/regex constructs added in v2.5.
+
 ## v2.3 — 2026-11-11
 
 **Added · إضافات**

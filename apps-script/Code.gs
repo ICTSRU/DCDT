@@ -1,5 +1,5 @@
 /**
- * SRU ICTD · Data Center Digital Twin — Backend v2.7
+ * SRU ICTD · Data Center Digital Twin — Backend v2.8
  * Google Apps Script bound to a Google Sheet. Serves Index.html through HtmlService.
  *
  * Sheets (created by setup()):
@@ -15,7 +15,7 @@
  * Deploy: Execute as "Me" (the owner), Who has access "Anyone within sr.edu.sa".
  */
 
-const APP_VERSION = '2.7';
+const APP_VERSION = '2.8';
 const APP_TITLE = 'التوأم الرقمي لمركز البيانات';
 const ACCESS_MODE = 'LIST';          // 'LIST' | 'DOMAIN'
 const DOMAIN = 'sr.edu.sa';

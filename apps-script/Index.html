@@ -28,6 +28,7 @@
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.5}
 .wrap{max-width:1280px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.ltr{direction:ltr;unicode-bidi:isolate}
 .num{direction:ltr;unicode-bidi:isolate;display:inline-block;font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -191,7 +192,7 @@ footer .chip{background:rgba(255,255,255,.14)}
       <p id="sub"></p>
     </div>
     <div class="chips">
-      <span class="chip ver" id="verchip">v2.7</span>
+      <span class="chip ver" id="verchip">v2.8</span>
       <span class="chip" id="modechip" hidden></span>
       <span class="chip" id="userchip" hidden></span>
       <button class="btn" type="button" data-act="refresh" data-i="refresh">تحديث</button>
@@ -235,8 +236,8 @@ footer .chip{background:rgba(255,255,255,.14)}
           <section class="card">
             <h2 data-i="wiTitle">أين يمكن تركيب جهاز جديد؟</h2>
             <div class="form">
-              <label><span data-i="wiU">الارتفاع (U)</span><input type="number" id="wu" dir="ltr" min="1" max="60" step="1" value="2"></label>
-              <label><span data-i="wiKw">القدرة (W)</span><input type="number" id="wk" dir="ltr" min="1" max="50000" step="50" value="900"></label>
+              <label><span data-i="wiU">الارتفاع (U)</span><input type="number" id="wu" class="ltr" min="1" max="60" step="1" value="2"></label>
+              <label><span data-i="wiKw">القدرة (W)</span><input type="number" id="wk" class="ltr" min="1" max="50000" step="50" value="900"></label>
               <label style="width:auto;display:flex;align-items:center;gap:6px;padding-bottom:6px"><input type="checkbox" id="showfit" checked><span data-i="wiShow">إظهار على المخطط</span></label>
             </div>
             <p class="hint" id="wihint"></p>
@@ -260,7 +261,7 @@ footer .chip{background:rgba(255,255,255,.14)}
   <div class="wrap">
     <span data-i="foot">النظام يقرأ بياناته من Google Sheet ويُحدَّث من صفحة الإعدادات.</span>
     <span style="display:flex;gap:12px;align-items:center">
-      <span class="chip" id="verfoot">v2.7</span>
+      <span class="chip" id="verfoot">v2.8</span>
       <a href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener">ITOC · IT Operations Center</a>
     </span>
   </div>
@@ -297,7 +298,7 @@ footer .chip{background:rgba(255,255,255,.14)}
 <script>
 (function(){
 'use strict';
-const APP_VERSION='2.7';
+const APP_VERSION='2.8';
 const IS_GAS=!!(window.google&&window.google.script&&window.google.script.run);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -572,7 +573,7 @@ function renderDetail(){
     const kv=[['loc',locText(sel)],['type',t('types')[sel.Type]],['status',t('statuses')[sel.Status]],['kw',fW(sel.PowerW)+' W'],['vendorModel',[sel.Vendor,sel.Model].filter(Boolean).join(' ')],['serial',sel.Serial],['asset',sel.AssetTag],['ip',sel.IP],['owner',sel.Owner],['notes',sel.Notes]].filter(x=>x[1]);
     card=`<div class="devcard"><b>${esc(sel.Name)}</b> <span class="muted">· ${esc(t('rack'))} ${esc(r.RackID)}</span><dl>${kv.map(([k,v])=>`<div><dt>${esc(t(k))}</dt><dd>${['ip','serial','asset','loc'].includes(k)?num(v):esc(v)}</dd></div>`).join('')}</dl></div>`;
   }
-  $('detail').innerHTML=`<h2><span>${esc(t('detail'))} <span dir="ltr">${esc(rackLabel(r))}</span></span><span><span class="pill s-${sp}">${esc(t('power'))}: ${esc(t(sp))}</span> <span class="pill s-${st}">${esc(t('inlet'))}: ${esc(t(st))}</span> <span class="pill s-${ss}">${esc(t('space'))}: ${esc(t(ss))}</span></span></h2>`+
+  $('detail').innerHTML=`<h2><span>${esc(t('detail'))} <span class="ltr">${esc(rackLabel(r))}</span></span><span><span class="pill s-${sp}">${esc(t('power'))}: ${esc(t(sp))}</span> <span class="pill s-${st}">${esc(t('inlet'))}: ${esc(t(st))}</span> <span class="pill s-${ss}">${esc(t('space'))}: ${esc(t(ss))}</span></span></h2>`+
    `<div class="detail"><div class="elev">${elev(r,S.selDev,'dash')}</div><div class="right">`+
    `<div class="stats"><div class="stat"><div class="l">${t('power')}</div><div class="v">${val(fW(r.kw)+' / '+fW(r.PowerCapW),'W')}</div></div>`+
    `<div class="stat"><div class="l">${t('inlet')}</div><div class="v">${r.t===null?'—':val(f1(r.t),'°C')}</div></div>`+
@@ -625,7 +626,7 @@ function renderRacksCard(sorted){
    (sorted.length?'':`<button type="button" class="btn" data-act="loadSample">${t('loadSample')}</button>`)+
    `<button type="button" class="btn pri" data-act="addRack">${t('addRack')}</button></span></h2>`+
    (sorted.length?`<div class="scroll"><table><thead><tr><th>${t('rackId')}</th><th>${t('rackName')}</th><th>${t('rowF')}</th><th>${t('posF')}</th><th>${t('usedTotal')} U</th><th>${t('cap')}</th><th>${t('inletF')}</th><th>${t('devCount')}</th><th>${t('actions')}</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<p class="muted">${esc(t('emptyAdmin'))}</p>`)+
-   `<h3>${t('genTitle')}</h3><div class="fgrid"><label>${t('genRows')}<input id="g-rows" dir="ltr" value="A, B"></label><label>${t('genPer')}<input id="g-per" dir="ltr" type="number" min="1" max="30" step="1" value="5"></label><label>${t('genU')}<input id="g-u" dir="ltr" type="number" min="1" max="60" step="1" value="${T.DefaultTotalU}"></label><label>${t('genCap')}<input id="g-cap" dir="ltr" type="number" min="100" max="100000" step="100" value="${T.DefaultPowerCapW}"></label></div>`+
+   `<h3>${t('genTitle')}</h3><div class="fgrid"><label>${t('genRows')}<input id="g-rows" class="ltr" value="A, B"></label><label>${t('genPer')}<input id="g-per" class="ltr" type="number" min="1" max="30" step="1" value="5"></label><label>${t('genU')}<input id="g-u" class="ltr" type="number" min="1" max="60" step="1" value="${T.DefaultTotalU}"></label><label>${t('genCap')}<input id="g-cap" class="ltr" type="number" min="100" max="100000" step="100" value="${T.DefaultPowerCapW}"></label></div>`+
    `<p class="hint" style="margin-top:8px">${esc(t('genNote'))}</p><button type="button" class="btn" data-act="gen">${t('genBtn')}</button><p class="err" id="g-err" role="alert"></p>`;
 }
 function renderContents(sorted){
@@ -642,7 +643,7 @@ function renderContents(sorted){
 function renderRoom(){
   const T=DB.settings;
   $('set-room').innerHTML=`<h2>${t('sRoomTitle')}</h2><div class="fgrid"><label class="full">${t('fRoomName')}<input id="s-RoomName" maxlength="60" value="${esc(T.RoomName)}"></label>`+
-   RF.map(f=>`<label>${t(f[1])}<input id="s-${f[0]}" dir="ltr" type="number" min="${f[2]}" max="${f[3]}" step="${f[4]}" value="${esc(T[f[0]])}"></label>`).join('')+
+   RF.map(f=>`<label>${t(f[1])}<input id="s-${f[0]}" class="ltr" type="number" min="${f[2]}" max="${f[3]}" step="${f[4]}" value="${esc(T[f[0]])}"></label>`).join('')+
    `</div><p class="err" id="s-err" role="alert"></p><button type="button" class="btn pri" data-act="saveRoom">${t('save')}</button>`;
 }
 
@@ -701,7 +702,7 @@ function openLb(rack,id){const r=rackById(rack);if(!r)return;LB={rack,idx:Math.m
 function closeLb(){$('lightbox').hidden=true;$('lbimg').removeAttribute('src')}
 function resizeImage(file){
   return new Promise((res,rej)=>{
-    if(!/^image\//.test(file.type||''))return rej(new Error('E_PHOTO'));
+    if(String(file.type||'').indexOf('image/')!==0)return rej(new Error('E_PHOTO'));
     const fr=new FileReader();fr.onerror=()=>rej(new Error('E_PHOTO'));
     fr.onload=()=>{
       const im=new Image();im.onerror=()=>rej(new Error('E_PHOTO'));
@@ -741,13 +742,13 @@ async function delPhoto(id,pid){
 const v=id=>($(id).value||'').trim();
 function rackForm(r,isNew){
   return `<div class="fgrid">`+
-   `<label>${t('rackId')}<input id="r-id" dir="ltr" maxlength="12" value="${esc(r.RackID)}"${isNew?'':' disabled'}></label>`+
+   `<label>${t('rackId')}<input id="r-id" class="ltr" maxlength="12" value="${esc(r.RackID)}"${isNew?'':' disabled'}></label>`+
    `<label>${t('rackName')}<input id="r-name" maxlength="40" value="${esc(r.Name)}"></label>`+
-   `<label>${t('rowF')}<input id="r-row" dir="ltr" maxlength="6" value="${esc(r.Row)}"></label>`+
-   `<label>${t('posF')}<input id="r-pos" dir="ltr" type="number" min="1" max="99" step="1" value="${esc(r.Position)}"></label>`+
-   `<label>${t('totalU')}<input id="r-u" dir="ltr" type="number" min="1" max="60" step="1" value="${esc(r.TotalU)}"></label>`+
-   `<label>${t('cap')}<input id="r-cap" dir="ltr" type="number" min="100" max="100000" step="100" value="${esc(r.PowerCapW)}"></label>`+
-   `<label>${t('inletF')}<input id="r-temp" dir="ltr" type="number" min="0" max="60" step="0.1" value="${r.InletTempC==null?'':esc(r.InletTempC)}"><small>${esc(t('inletNote'))}</small></label>`+
+   `<label>${t('rowF')}<input id="r-row" class="ltr" maxlength="6" value="${esc(r.Row)}"></label>`+
+   `<label>${t('posF')}<input id="r-pos" class="ltr" type="number" min="1" max="99" step="1" value="${esc(r.Position)}"></label>`+
+   `<label>${t('totalU')}<input id="r-u" class="ltr" type="number" min="1" max="60" step="1" value="${esc(r.TotalU)}"></label>`+
+   `<label>${t('cap')}<input id="r-cap" class="ltr" type="number" min="100" max="100000" step="100" value="${esc(r.PowerCapW)}"></label>`+
+   `<label>${t('inletF')}<input id="r-temp" class="ltr" type="number" min="0" max="60" step="0.1" value="${r.InletTempC==null?'':esc(r.InletTempC)}"><small>${esc(t('inletNote'))}</small></label>`+
    `<label class="full">${t('notes')}<textarea id="r-notes" maxlength="200" rows="2">${esc(r.Notes)}</textarea></label>`+
    `<div class="photoedit"><div class="lbl">${t('photos')}</div>`+(isNew?`<p class="muted">${esc(t('photoSaveFirst'))}</p>`:`<div id="r-photos"></div><input type="file" id="r-file" accept="image/*" hidden><button type="button" class="btn" id="r-addph">${esc(t('photoAdd'))}</button> <small class="muted">${esc(t('photoHint',4))}</small>`)+`</div></div>`;
 }
@@ -783,15 +784,15 @@ function openDevForm(id){
    `<label>${t('devType')}<select id="d-type">${TYPES.map(x=>`<option value="${x}"${x===d.Type?' selected':''}>${esc(t('types')[x])}</option>`).join('')}</select></label>`+
    `<label>${t('devStatus')}<select id="d-status">${STATUSES.map(x=>`<option value="${x}"${x===d.Status?' selected':''}>${esc(t('statuses')[x])}</option>`).join('')}</select></label>`+
    `<label>${t('devRack')}<select id="d-rack">${sorted.map(x=>`<option value="${esc(x.RackID)}"${x.RackID===d.RackID?' selected':''}>${esc(rackLabel(x))}</option>`).join('')}</select></label>`+
-   `<label>${t('startU')}<input id="d-start" dir="ltr" type="number" min="1" max="60" step="1" value="${esc(d.StartU)}"></label>`+
-   `<label>${t('heightU')}<input id="d-h" dir="ltr" type="number" min="1" max="60" step="1" value="${esc(d.HeightU)}"></label>`+
-   `<label>${t('powerW')}<input id="d-kw" dir="ltr" type="number" min="0" max="50000" step="10" value="${esc(d.PowerW)}"></label>`+
+   `<label>${t('startU')}<input id="d-start" class="ltr" type="number" min="1" max="60" step="1" value="${esc(d.StartU)}"></label>`+
+   `<label>${t('heightU')}<input id="d-h" class="ltr" type="number" min="1" max="60" step="1" value="${esc(d.HeightU)}"></label>`+
+   `<label>${t('powerW')}<input id="d-kw" class="ltr" type="number" min="0" max="50000" step="10" value="${esc(d.PowerW)}"></label>`+
    `<p class="hint full" id="d-free" style="margin:0"></p>`+
    `<label>${t('vendor')}<input id="d-vendor" maxlength="60" value="${esc(d.Vendor)}"></label>`+
-   `<label>${t('model')}<input id="d-model" dir="ltr" maxlength="60" value="${esc(d.Model)}"></label>`+
-   `<label>${t('serial')}<input id="d-serial" dir="ltr" maxlength="60" value="${esc(d.Serial)}"></label>`+
-   `<label>${t('asset')}<input id="d-asset" dir="ltr" maxlength="40" value="${esc(d.AssetTag)}"></label>`+
-   `<label>${t('ip')}<input id="d-ip" dir="ltr" maxlength="45" value="${esc(d.IP)}"></label>`+
+   `<label>${t('model')}<input id="d-model" class="ltr" maxlength="60" value="${esc(d.Model)}"></label>`+
+   `<label>${t('serial')}<input id="d-serial" class="ltr" maxlength="60" value="${esc(d.Serial)}"></label>`+
+   `<label>${t('asset')}<input id="d-asset" class="ltr" maxlength="40" value="${esc(d.AssetTag)}"></label>`+
+   `<label>${t('ip')}<input id="d-ip" class="ltr" maxlength="45" value="${esc(d.IP)}"></label>`+
    `<label>${t('owner')}<input id="d-owner" maxlength="80" value="${esc(d.Owner)}"></label>`+
    `<label class="full">${t('notes')}<textarea id="d-notes" maxlength="300" rows="2">${esc(d.Notes)}</textarea></label></div>`;
   openModal(cur?t('editDevTitle',cur.Name):t('addDevTitle'),body,{onSave:async()=>{
@@ -861,7 +862,7 @@ document.addEventListener('click',e=>{
     e.stopPropagation();
     if(d.classList.contains('arm')){delPhoto(d.closest('.pthumb').dataset.prack,d.dataset.pdel);return}
     d.classList.add('arm');d.textContent=t('photoDelArm');
-    setTimeout(()=>{if(d.isConnected){d.classList.remove('arm');d.textContent='\u00d7'}},3500);return;
+    setTimeout(()=>{if(d.isConnected){d.classList.remove('arm');d.textContent='×'}},3500);return;
   }
   const th=e.target.closest('.pthumb');
   if(th&&!th.classList.contains('ld'))openLb(th.dataset.prack,th.dataset.pid);
@@ -878,14 +879,14 @@ $('msave').addEventListener('click',runModalSave);
 
 /* ───────── page chrome and lifecycle ───────── */
 function chrome(){
-  document.documentElement.lang=S.lang;document.documentElement.dir=S.lang==='ar'?'rtl':'ltr';
+  document.documentElement.lang=S.lang;document.documentElement.setAttribute('dir',S.lang==='ar'?'rtl':'ltr');
   document.querySelectorAll('[data-i]').forEach(el=>{el.textContent=t(el.dataset.i)});
   $('lang').textContent=S.lang==='ar'?'English':'العربية';
   $('q').placeholder=t('searchPh');
   $('verchip').textContent='v'+APP_VERSION;$('verfoot').textContent='v'+APP_VERSION;
   $('sub').textContent=DB.settings.RoomName||'';
   const m=$('modechip');m.hidden=IS_GAS;m.textContent=t('demo');
-  const u=$('userchip');u.hidden=!ME.email;u.innerHTML=ME.email?`<span dir="ltr">${esc(ME.email)}</span> · ${esc(ME.role==='admin'?t('roleAdmin'):t('roleViewer'))}`:'';
+  const u=$('userchip');u.hidden=!ME.email;u.innerHTML=ME.email?`<span class="ltr">${esc(ME.email)}</span> · ${esc(ME.role==='admin'?t('roleAdmin'):t('roleViewer'))}`:'';
   document.title=t('title');
 }
 function apply(s){DB.settings=s.settings;DB.racks=s.racks.map(r=>r.Photos?r:Object.assign({},r,{Photos:[]}));DB.devices=s.devices;if(s.user)ME=s.user;LASTSYNC=new Date();enrich()}
@@ -944,7 +945,7 @@ const demo=(function(){
   return{
     api_bootstrap(){const s=snap();s.version=APP_VERSION;s.user={email:'demo@sr.edu.sa',role:'admin'};return s},
     api_addRackPhoto(id,url){
-      const m=/^data:image\/(jpeg|png|webp);base64,/.exec(String(url||'').slice(0,40));if(!m)fail('E_PHOTO');
+      const m=String(url||'').slice(0,40).match(/^data:image.(jpeg|png|webp);base64,/);if(!m)fail('E_PHOTO');
       const r=D.racks.find(x=>x.RackID===id);if(!r)fail('E_RACK_NONE',id);
       r.Photos=r.Photos||[];if(r.Photos.length>=4)fail('E_PHOTO_MAX');
       const pid='P'+Math.random().toString(36).slice(2,10);P[pid]=url;
