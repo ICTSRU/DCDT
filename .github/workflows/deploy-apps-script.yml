@@ -18,15 +18,15 @@ jobs:
     env:
       SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
       DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+      CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Check required secrets
         run: |
-          for v in SCRIPT_ID DEPLOYMENT_ID; do
+          for v in SCRIPT_ID DEPLOYMENT_ID CLASPRC_JSON; do
             [ -n "${!v}" ] || { echo "::error::Missing repository secret $v"; exit 1; }
           done
-          [ -n "${{ secrets.CLASPRC_JSON }}" ] || { echo "::error::Missing repository secret CLASPRC_JSON"; exit 1; }
 
       - name: Sanity-check the code
         run: |
@@ -44,7 +44,7 @@ jobs:
 
       - name: Authenticate clasp
         run: |
-          printf '%s' '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
+          printf '%s' "$CLASPRC_JSON" > ~/.clasprc.json
           printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > apps-script/.clasp.json
 
       - name: Push code

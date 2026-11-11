@@ -11,6 +11,11 @@ Versioning: one digit after the decimal point; after x.9 comes (x+1).0.
 **Changed · تغييرات**
 - Sign-in page moved from `landing/index.html` to the repository root `index.html`.
 
+## v2.3.1 — 2026-11-11
+
+**Fixed**
+- Deploy workflow: secrets are passed through environment variables (the multi-line CLASPRC_JSON broke the shell check).
+
 ## v2.2 — 2026-11-08
 
 **Changed · تغييرات**
