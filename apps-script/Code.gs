@@ -1,5 +1,5 @@
 /**
- * SRU ICTD · Data Center Digital Twin — Backend v2.5
+ * SRU ICTD · Data Center Digital Twin — Backend v2.6
  * Google Apps Script bound to a Google Sheet. Serves Index.html through HtmlService.
  *
  * Sheets (created by setup()):
@@ -15,7 +15,7 @@
  * Deploy: Execute as "Me" (the owner), Who has access "Anyone within sr.edu.sa".
  */
 
-const APP_VERSION = '2.5';
+const APP_VERSION = '2.6';
 const APP_TITLE = 'التوأم الرقمي لمركز البيانات';
 const ACCESS_MODE = 'LIST';          // 'LIST' | 'DOMAIN'
 const DOMAIN = 'sr.edu.sa';
@@ -211,7 +211,7 @@ function logAccess_(u, result) {
 function api_bootstrap() {
   const u = requireUser_(false);
   const pr = PropertiesService.getScriptProperties();
-  if (pr.getProperty('POWER_UNIT') !== 'W' || pr.getProperty('PHOTOS_COL') !== '1') withLock_(function () { migrateWatts_(); ensurePhotosColumn_(); });
+  if (pr.getProperty('POWER_UNIT') !== 'W' || pr.getProperty('PHOTOS_COL') !== '1') try { withLock_(function () { migrateWatts_(); ensurePhotosColumn_(); }); } catch (e) { /* never block the dashboard; retried on the next load */ }
   const s = snapshot_();
   s.version = APP_VERSION;
   s.user = { email: u.email, role: u.role };

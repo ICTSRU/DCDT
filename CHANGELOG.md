@@ -11,6 +11,12 @@ Versioning: one digit after the decimal point; after x.9 comes (x+1).0.
 **Changed · تغييرات**
 - Sign-in page moved from `landing/index.html` to the repository root `index.html`.
 
+## v2.6 — 2026-11-11
+
+**Fixed · إصلاحات**
+- The dashboard no longer sits silently on "Loading data…": after 15 seconds it explains the likely cause (Drive permission not yet approved after v2.5) and what to do; an authorization error from Apps Script is now shown as a clear message.
+- A failed background migration can no longer block the dashboard from loading.
+
 ## v2.5 — 2026-11-11
 
 **Added · إضافات**

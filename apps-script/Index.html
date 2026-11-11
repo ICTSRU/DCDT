@@ -191,7 +191,7 @@ footer .chip{background:rgba(255,255,255,.14)}
       <p id="sub"></p>
     </div>
     <div class="chips">
-      <span class="chip ver" id="verchip">v2.5</span>
+      <span class="chip ver" id="verchip">v2.6</span>
       <span class="chip" id="modechip" hidden></span>
       <span class="chip" id="userchip" hidden></span>
       <button class="btn" type="button" data-act="refresh" data-i="refresh">تحديث</button>
@@ -260,7 +260,7 @@ footer .chip{background:rgba(255,255,255,.14)}
   <div class="wrap">
     <span data-i="foot">النظام يقرأ بياناته من Google Sheet ويُحدَّث من صفحة الإعدادات.</span>
     <span style="display:flex;gap:12px;align-items:center">
-      <span class="chip" id="verfoot">v2.5</span>
+      <span class="chip" id="verfoot">v2.6</span>
       <a href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener">ITOC · IT Operations Center</a>
     </span>
   </div>
@@ -288,7 +288,7 @@ footer .chip{background:rgba(255,255,255,.14)}
 <script>
 (function(){
 'use strict';
-const APP_VERSION='2.5';
+const APP_VERSION='2.6';
 const IS_GAS=!!(window.google&&window.google.script&&window.google.script.run);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -340,6 +340,7 @@ ar:{
  devName:'اسم الجهاز',devType:'النوع',devStatus:'الحالة',devRack:'الرف',startU:'بداية الموقع (U)',heightU:'الارتفاع (U)',powerW:'قدرة الجهاز (W)',vendor:'الشركة المصنعة',model:'الطراز',
  freeHint:s=>`المساحات الحرة في الرف: ${s}`,freeNone:'لا توجد مساحة حرة في الرف',devRule:'يُحتسب الجهاز في الطاقة إذا كانت حالته نشط أو صيانة، وفي المساحة ما لم يكن خارج الخدمة.',
  photos:'صور الرف',photoAdd:'إضافة صورة',photoNone:'لا توجد صور لهذا الرف بعد.',photoHint:n=>`حتى ${n} صور لكل رف (مثلاً: أمامية وخلفية). تُضغط الصورة تلقائياً قبل الرفع.`,photoLoading:'جارٍ التحميل…',photoFail:'تعذر التحميل',photoOpen:'فتح الصورة',photoDel:'حذف الصورة',photoDelArm:'اضغط مرة أخرى للحذف',photoAdded:'تمت إضافة الصورة',photoDeleted:'تم حذف الصورة',photoUploading:'جارٍ رفع الصورة…',photoSaveFirst:'احفظ الرف أولاً ثم أضف صوره من نافذة التعديل.',
+ slowLoad:'تأخر رد الخادم. إن كنتم حدّثتم النظام للتو: افتحوا Apps Script وشغّلوا الدالة setup مرة واحدة ووافقوا على صلاحية Google Drive، ثم حدّثوا الصفحة. وإن استمر التأخر فراجعوا قائمة Executions في Apps Script.',errAuth:'الصلاحيات غير مكتملة. افتحوا Apps Script (من حساب صاحب المشروع) وشغّلوا الدالة setup مرة واحدة ووافقوا على صلاحية Google Drive، ثم حدّثوا الصفحة.',
  sRoomTitle:'إعدادات القاعة وحدود التنبيه',fRoomName:'اسم القاعة',fDefU:'ارتفاع الرف الافتراضي (U)',fDefCap:'سعة طاقة الرف الافتراضية (W)',fPlanP:'حد التخطيط للطاقة (%)',fPwW:'تحذير الطاقة (%)',fPwC:'حرج الطاقة (%)',fPlanT:'حد التخطيط لحرارة الدخل (°م)',fTW:'تحذير الحرارة (°م)',fTC:'حرج الحرارة (°م)',fSpW:'تحذير المساحة (%)',fSpC:'حرج المساحة (%)',fStale:'تأخر القراءة بالدقائق (0 = معطل)',
  save:'حفظ',cancel:'إلغاء',saved:'تم الحفظ',deleted:'تم الحذف',confirmTitle:'تأكيد الحذف',del:'حذف',
  delRackMsg:(id,n)=>`سيُحذف الرف ${id} مع ${n} جهاز. لا يمكن التراجع.`,delDevMsg:n=>`سيُحذف الجهاز ${n}.`,
@@ -379,6 +380,7 @@ en:{
  devName:'Device name',devType:'Type',devStatus:'Status',devRack:'Rack',startU:'Start position (U)',heightU:'Height (U)',powerW:'Device power (W)',vendor:'Vendor',model:'Model',
  freeHint:s=>`Free space in this rack: ${s}`,freeNone:'No free space in this rack',devRule:'A device counts toward power when Active or in Maintenance, and toward space unless Decommissioned.',
  photos:'Rack photos',photoAdd:'Add photo',photoNone:'No photos for this rack yet.',photoHint:n=>`Up to ${n} photos per rack (for example front and rear). Photos are compressed automatically before upload.`,photoLoading:'Loading…',photoFail:'Could not load',photoOpen:'Open photo',photoDel:'Delete photo',photoDelArm:'Click again to delete',photoAdded:'Photo added',photoDeleted:'Photo deleted',photoUploading:'Uploading photo…',photoSaveFirst:'Save the rack first, then add its photos from the edit window.',
+ slowLoad:'The server is slow to respond. If the system was just updated: open Apps Script, run the setup function once and approve the Google Drive permission, then refresh this page. If it keeps hanging, check the Executions list in Apps Script.',errAuth:'Permissions are incomplete. Open Apps Script (as the project owner), run the setup function once, approve the Google Drive permission, then refresh this page.',
  sRoomTitle:'Room settings and alert limits',fRoomName:'Room name',fDefU:'Default rack height (U)',fDefCap:'Default rack power capacity (W)',fPlanP:'Power planning limit (%)',fPwW:'Power warning (%)',fPwC:'Power critical (%)',fPlanT:'Inlet planning limit (°C)',fTW:'Temperature warning (°C)',fTC:'Temperature critical (°C)',fSpW:'Space warning (%)',fSpC:'Space critical (%)',fStale:'Stale reading after minutes (0 = off)',
  save:'Save',cancel:'Cancel',saved:'Saved',deleted:'Deleted',confirmTitle:'Confirm deletion',del:'Delete',
  delRackMsg:(id,n)=>`Rack ${id} and its ${n} devices will be deleted. This cannot be undone.`,delDevMsg:n=>`Device ${n} will be deleted.`,
@@ -404,6 +406,7 @@ function call(fn,...args){
 }
 function errMsg(e){
   const m=String((e&&e.message)||e||'');
+  if(/authori[sz]ation|permission/i.test(m)&&!/E_[A-Z_]+/.test(m))return t('errAuth');
   const x=/(E_[A-Z_]+)(?:\|([^\n]*))?/.exec(m);
   if(x){
     const f=I[S.lang].err[x[1]];
@@ -888,8 +891,10 @@ function renderAll(){
   if(S.tab==='dash')renderDash();else renderSet();
 }
 async function reload(silent){
-  try{apply(await call('api_bootstrap'));LOADED=true;renderAll();if(!silent)toast(t('refresh')+' ✓')}
-  catch(e){if(!LOADED){$('loading').hidden=false;$('loading').textContent=t('errFatal')+' '+errMsg(e)}else if(!silent)toast(errMsg(e),true)}
+  let tm=null;
+  if(!LOADED)tm=setTimeout(()=>{if(!LOADED){$('loading').hidden=false;$('loading').textContent=t('slowLoad')}},15000);
+  try{apply(await call('api_bootstrap'));clearTimeout(tm);LOADED=true;renderAll();if(!silent)toast(t('refresh')+' ✓')}
+  catch(e){clearTimeout(tm);if(!LOADED){$('loading').hidden=false;$('loading').textContent=t('errFatal')+' '+errMsg(e)}else if(!silent)toast(errMsg(e),true)}
 }
 /* ───────── demo backend (only used when the page is opened outside Apps Script) ───────── */
 const demo=(function(){
