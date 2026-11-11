@@ -11,6 +11,14 @@ Versioning: one digit after the decimal point; after x.9 comes (x+1).0.
 **Changed · تغييرات**
 - Sign-in page moved from `landing/index.html` to the repository root `index.html`.
 
+## v2.4 — 2026-11-11
+
+**Changed · تغييرات**
+- Power is now entered, stored and shown in **watts (W)** instead of kilowatts: rack power capacity, device power, the default capacity setting, the placement what-if, KPIs, floor plan and tables.
+- Sheet columns renamed: `PowerCapKW` → `PowerCapW` (Racks), `PowerKW` → `PowerW` (Devices); setting `DefaultPowerCapKW` → `DefaultPowerCapW` (Settings).
+- **Automatic migration:** existing v2.0–v2.3 sheets are converted once (headers renamed, values × 1000) the first time the page opens or `setup` runs. Nothing to do by hand.
+- Ranges: rack capacity 100–100000 W, device power 0–50000 W. Default rack capacity 6000 W.
+
 ## v2.3.1 — 2026-11-11
 
 **Fixed**

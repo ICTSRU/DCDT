@@ -1,11 +1,11 @@
 /**
- * SRU ICTD · Data Center Digital Twin — Backend v2.3
+ * SRU ICTD · Data Center Digital Twin — Backend v2.4
  * Google Apps Script bound to a Google Sheet. Serves Index.html through HtmlService.
  *
  * Sheets (created by setup()):
  *   Settings      Key / Value           room name and thresholds
- *   Racks         one row per rack      (RackID, Row, Position, TotalU, PowerCapKW, InletTempC ...)
- *   Devices       one row per device    (RackID, StartU, HeightU, PowerKW, IP, Serial ...)
+ *   Racks         one row per rack      (RackID, Row, Position, TotalU, PowerCapW, InletTempC ...)
+ *   Devices       one row per device    (RackID, StartU, HeightU, PowerW, IP, Serial ...)
  *   AllowedUsers  Email / Role / Name / Active     role = admin | viewer
  *   AccessLog     Date / Time / Email / Role / Result   one row per page open
  *   ChangeLog     every edit made from the Settings page
@@ -15,7 +15,7 @@
  * Deploy: Execute as "Me" (the owner), Who has access "Anyone within sr.edu.sa".
  */
 
-const APP_VERSION = '2.3';
+const APP_VERSION = '2.4';
 const APP_TITLE = 'التوأم الرقمي لمركز البيانات';
 const ACCESS_MODE = 'LIST';          // 'LIST' | 'DOMAIN'
 const DOMAIN = 'sr.edu.sa';
@@ -26,8 +26,8 @@ const T = { settings: 'Settings', racks: 'Racks', devices: 'Devices', allowed: '
 
 const HEAD = {
   Settings: ['Key', 'Value'],
-  Racks: ['RackID', 'Name', 'Row', 'Position', 'TotalU', 'PowerCapKW', 'InletTempC', 'ReadingAt', 'Notes', 'UpdatedAt', 'UpdatedBy'],
-  Devices: ['DeviceID', 'RackID', 'Name', 'Type', 'Status', 'StartU', 'HeightU', 'PowerKW', 'Vendor', 'Model', 'Serial', 'AssetTag', 'IP', 'Owner', 'Notes', 'UpdatedAt', 'UpdatedBy'],
+  Racks: ['RackID', 'Name', 'Row', 'Position', 'TotalU', 'PowerCapW', 'InletTempC', 'ReadingAt', 'Notes', 'UpdatedAt', 'UpdatedBy'],
+  Devices: ['DeviceID', 'RackID', 'Name', 'Type', 'Status', 'StartU', 'HeightU', 'PowerW', 'Vendor', 'Model', 'Serial', 'AssetTag', 'IP', 'Owner', 'Notes', 'UpdatedAt', 'UpdatedBy'],
   AllowedUsers: ['Email', 'Role', 'Name', 'Active'],
   AccessLog: ['Date', 'Time', 'Email', 'Role', 'Result'],
   ChangeLog: ['Timestamp', 'User', 'Action', 'Entity', 'ID', 'Details']
@@ -46,7 +46,7 @@ const TEXT_COLS = {
 const DEFAULTS = {
   RoomName: 'قاعة التجربة / Pilot Room',
   DefaultTotalU: 42,
-  DefaultPowerCapKW: 6,
+  DefaultPowerCapW: 6000,
   PlanPowerPct: 80,
   PowerWarnPct: 80,
   PowerCritPct: 90,
@@ -59,7 +59,7 @@ const DEFAULTS = {
 };
 // key: [min, max, mustBeInteger]
 const NUM_RULES = {
-  DefaultTotalU: [1, 60, true], DefaultPowerCapKW: [0.1, 100, false],
+  DefaultTotalU: [1, 60, true], DefaultPowerCapW: [100, 100000, true],
   PlanPowerPct: [1, 100, false], PowerWarnPct: [1, 100, false], PowerCritPct: [1, 150, false],
   PlanTempC: [10, 45, false], TempWarnC: [10, 50, false], TempCritC: [10, 60, false],
   SpaceWarnPct: [1, 100, false], SpaceCritPct: [1, 100, false], StaleMinutes: [0, 1440, true]
@@ -77,10 +77,43 @@ function onOpen() {
     .addToUi();
 }
 
+/**
+ * v2.4: power is stored in watts. Converts sheets created by v2.0-v2.3 (kW) once:
+ * renames the columns/key (PowerCapKW, PowerKW, DefaultPowerCapKW) and multiplies the values by 1000.
+ * Safe to run repeatedly; it is guarded by the POWER_UNIT script property.
+ */
+function migrateWatts_() {
+  const props = PropertiesService.getScriptProperties();
+  if (props.getProperty('POWER_UNIT') === 'W') return;
+  [[T.racks, 'PowerCapKW', 'PowerCapW'], [T.devices, 'PowerKW', 'PowerW']].forEach(function (m) {
+    const sh = sheet_(m[0]);
+    if (sh.getLastRow() < 1) return;
+    const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0], i = head.indexOf(m[1]);
+    if (i < 0) return;
+    sh.getRange(1, i + 1).setValue(m[2]);
+    const n = sh.getLastRow() - 1;
+    if (n > 0) {
+      const rng = sh.getRange(2, i + 1, n, 1);
+      rng.setValues(rng.getValues().map(function (r) { return [(r[0] === '' || isNaN(Number(r[0]))) ? r[0] : Math.round(Number(r[0]) * 1000)]; }));
+    }
+  });
+  const st = sheet_(T.settings);
+  if (st.getLastRow() > 1) {
+    const vals = st.getRange(2, 1, st.getLastRow() - 1, 2).getValues();
+    vals.forEach(function (r, k) {
+      if (String(r[0]) === 'DefaultPowerCapKW') {
+        st.getRange(k + 2, 1, 1, 2).setValues([['DefaultPowerCapW', Math.round(Number(r[1]) * 1000) || DEFAULTS.DefaultPowerCapW]]);
+      }
+    });
+  }
+  props.setProperty('POWER_UNIT', 'W');
+}
+
 /** Run once from the editor: creates every sheet, headers, defaults and the owner as admin. */
 function setup() {
   const ss = SpreadsheetApp.getActive();
   PropertiesService.getScriptProperties().setProperty('SHEET_ID', ss.getId());
+  migrateWatts_();
   Object.keys(HEAD).forEach(function (n) { ensureSheet_(n); });
   const have = readTable_(T.settings).map(function (r) { return r.Key; });
   const add = [];
@@ -156,6 +189,7 @@ function logAccess_(u, result) {
 
 function api_bootstrap() {
   const u = requireUser_(false);
+  if (PropertiesService.getScriptProperties().getProperty('POWER_UNIT') !== 'W') withLock_(migrateWatts_);
   const s = snapshot_();
   s.version = APP_VERSION;
   s.user = { email: u.email, role: u.role };
@@ -194,7 +228,7 @@ function api_saveRack(r, isNew) {
     if (!row || row.length > 6) fail_('E_ROW');
     const pos = int_(r.Position, 1, 99, 'E_POS');
     const totalU = int_(r.TotalU, 1, 60, 'E_TOTALU');
-    const cap = num_(r.PowerCapKW, 0.1, 100, 'E_CAP');
+    const cap = num_(r.PowerCapW, 100, 100000, 'E_CAP');
     let inlet = '';
     if (r.InletTempC !== '' && r.InletTempC !== null && r.InletTempC !== undefined) inlet = num_(r.InletTempC, 0, 60, 'E_TEMP');
 
@@ -216,11 +250,11 @@ function api_saveRack(r, isNew) {
     else if (!cur || String(cur.InletTempC) === '' || Number(cur.InletTempC) !== inlet) readingAt = now;
     const obj = {
       RackID: id, Name: String(r.Name || id).trim().slice(0, 40), Row: row, Position: pos, TotalU: totalU,
-      PowerCapKW: cap, InletTempC: inlet, ReadingAt: readingAt, Notes: String(r.Notes || '').slice(0, 200),
+      PowerCapW: cap, InletTempC: inlet, ReadingAt: readingAt, Notes: String(r.Notes || '').slice(0, 200),
       UpdatedAt: now, UpdatedBy: u.email
     };
     if (cur) writeRow_(T.racks, cur._row, obj); else appendRows_(T.racks, [obj]);
-    log_(u, cur ? 'EDIT' : 'ADD', 'Rack', id, row + '-' + pos + ', ' + totalU + 'U, ' + cap + 'kW');
+    log_(u, cur ? 'EDIT' : 'ADD', 'Rack', id, row + '-' + pos + ', ' + totalU + 'U, ' + cap + 'W');
     return snapshot_();
   });
 }
@@ -249,7 +283,7 @@ function api_generateRacks(cfg) {
     rows.forEach(function (x) { if (!/^[A-Za-z0-9_-]{1,6}$/.test(x)) fail_('E_GEN'); });
     const perRow = int_(cfg.perRow, 1, 30, 'E_GEN');
     const totalU = int_(cfg.totalU, 1, 60, 'E_TOTALU');
-    const cap = num_(cfg.powerCapKW, 0.1, 100, 'E_CAP');
+    const cap = num_(cfg.powerCapW, 100, 100000, 'E_CAP');
     const racks = readTable_(T.racks);
     const ids = {}, spots = {};
     racks.forEach(function (x) { ids[String(x.RackID)] = 1; spots[String(x.Row) + '|' + Number(x.Position)] = 1; });
@@ -258,7 +292,7 @@ function api_generateRacks(cfg) {
       for (let i = 1; i <= perRow; i++) {
         const id = rw + (i < 10 ? '0' + i : String(i));
         if (id.length > 12 || ids[id] || spots[rw + '|' + i]) continue;
-        add.push({ RackID: id, Name: id, Row: rw, Position: i, TotalU: totalU, PowerCapKW: cap, InletTempC: '', ReadingAt: '', Notes: '', UpdatedAt: now, UpdatedBy: u.email });
+        add.push({ RackID: id, Name: id, Row: rw, Position: i, TotalU: totalU, PowerCapW: cap, InletTempC: '', ReadingAt: '', Notes: '', UpdatedAt: now, UpdatedBy: u.email });
         ids[id] = 1; spots[rw + '|' + i] = 1;
       }
     });
@@ -284,7 +318,7 @@ function api_saveDevice(d) {
     if (!rack) fail_('E_RACK_NONE', rackId);
     const start = int_(d.StartU, 1, 60, 'E_DEV_U');
     const h = int_(d.HeightU, 1, 60, 'E_DEV_U');
-    const kw = (d.PowerKW === '' || d.PowerKW === null || d.PowerKW === undefined) ? 0 : num_(d.PowerKW, 0, 50, 'E_DEV_KW');
+    const kw = (d.PowerW === '' || d.PowerW === null || d.PowerW === undefined) ? 0 : num_(d.PowerW, 0, 50000, 'E_DEV_W');
 
     const all = readTable_(T.devices);
     const id0 = String(d.DeviceID || '');
@@ -301,7 +335,7 @@ function api_saveDevice(d) {
     const t = function (v, n) { return String(v === undefined || v === null ? '' : v).trim().slice(0, n); };
     const obj = {
       DeviceID: cur ? id0 : newId_(), RackID: rackId, Name: name, Type: d.Type, Status: d.Status,
-      StartU: start, HeightU: h, PowerKW: kw, Vendor: t(d.Vendor, 60), Model: t(d.Model, 60), Serial: t(d.Serial, 60),
+      StartU: start, HeightU: h, PowerW: kw, Vendor: t(d.Vendor, 60), Model: t(d.Model, 60), Serial: t(d.Serial, 60),
       AssetTag: t(d.AssetTag, 40), IP: t(d.IP, 45), Owner: t(d.Owner, 80), Notes: t(d.Notes, 300),
       UpdatedAt: stamp_(), UpdatedBy: u.email
     };
@@ -337,7 +371,7 @@ function snapshot_() {
   const racks = readTable_(T.racks).filter(function (r) { return String(r.RackID) !== ''; }).map(function (r) {
     return {
       RackID: String(r.RackID), Name: String(r.Name || r.RackID), Row: String(r.Row), Position: Number(r.Position) || 1,
-      TotalU: Number(r.TotalU) || 42, PowerCapKW: Number(r.PowerCapKW) || 0,
+      TotalU: Number(r.TotalU) || 42, PowerCapW: Number(r.PowerCapW) || 0,
       InletTempC: (r.InletTempC === '' || isNaN(Number(r.InletTempC))) ? null : Number(r.InletTempC),
       ReadingAt: String(r.ReadingAt || ''), Notes: String(r.Notes || '')
     };
@@ -347,7 +381,7 @@ function snapshot_() {
       DeviceID: String(d.DeviceID), RackID: String(d.RackID), Name: String(d.Name),
       Type: TYPES.indexOf(String(d.Type)) >= 0 ? String(d.Type) : 'other',
       Status: STATUSES.indexOf(String(d.Status)) >= 0 ? String(d.Status) : 'Active',
-      StartU: Number(d.StartU) || 1, HeightU: Number(d.HeightU) || 1, PowerKW: Number(d.PowerKW) || 0,
+      StartU: Number(d.StartU) || 1, HeightU: Number(d.HeightU) || 1, PowerW: Number(d.PowerW) || 0,
       Vendor: String(d.Vendor || ''), Model: String(d.Model || ''), Serial: String(d.Serial || ''), AssetTag: String(d.AssetTag || ''),
       IP: String(d.IP || ''), Owner: String(d.Owner || ''), Notes: String(d.Notes || '')
     };
@@ -366,7 +400,7 @@ function readSettings_() {
   return out;
 }
 
-// name, type, startU, heightU, kW, [status], [ip]
+// name, type, startU, heightU, W, [status], [ip]
 const SAMPLE = [
   ['A01', 24.1, [['core-sw-01', 'network', 41, 2, 0.4, 'Active', '10.20.0.1'], ['fw-01', 'security', 39, 2, 0.5], ['esx-01', 'server', 30, 2, 0.9, 'Active', '10.20.1.11'], ['esx-02', 'server', 28, 2, 0.9, 'Active', '10.20.1.12'], ['esx-03', 'server', 26, 2, 0.9], ['san-01', 'storage', 10, 4, 1.4]]],
   ['A02', 24.8, [['esx-04', 'server', 36, 2, 0.9], ['esx-05', 'server', 34, 2, 0.9], ['esx-06', 'server', 32, 2, 0.9], ['esx-07', 'server', 30, 2, 0.9], ['erp-app-01', 'server', 24, 2, 0.8]]],
@@ -384,9 +418,9 @@ function loadSample_(u) {
   if (readTable_(T.racks).length) fail_('E_NOT_EMPTY');
   const now = stamp_(), s = readSettings_(), racks = [], devs = [];
   SAMPLE.forEach(function (r) {
-    racks.push({ RackID: r[0], Name: r[0], Row: r[0].charAt(0), Position: Number(r[0].slice(1)), TotalU: s.DefaultTotalU, PowerCapKW: s.DefaultPowerCapKW, InletTempC: r[1], ReadingAt: now, Notes: 'Sample data', UpdatedAt: now, UpdatedBy: u.email });
+    racks.push({ RackID: r[0], Name: r[0], Row: r[0].charAt(0), Position: Number(r[0].slice(1)), TotalU: s.DefaultTotalU, PowerCapW: s.DefaultPowerCapW, InletTempC: r[1], ReadingAt: now, Notes: 'Sample data', UpdatedAt: now, UpdatedBy: u.email });
     r[2].forEach(function (d) {
-      devs.push({ DeviceID: newId_(), RackID: r[0], Name: d[0], Type: d[1], Status: d[5] || 'Active', StartU: d[2], HeightU: d[3], PowerKW: d[4], IP: d[6] || '', Notes: 'Sample data', UpdatedAt: now, UpdatedBy: u.email });
+      devs.push({ DeviceID: newId_(), RackID: r[0], Name: d[0], Type: d[1], Status: d[5] || 'Active', StartU: d[2], HeightU: d[3], PowerW: Math.round(d[4] * 1000), IP: d[6] || '', Notes: 'Sample data', UpdatedAt: now, UpdatedBy: u.email });
     });
   });
   appendRows_(T.racks, racks);

@@ -176,7 +176,7 @@ footer .chip{background:rgba(255,255,255,.14)}
       <p id="sub"></p>
     </div>
     <div class="chips">
-      <span class="chip ver" id="verchip">v2.3</span>
+      <span class="chip ver" id="verchip">v2.4</span>
       <span class="chip" id="modechip" hidden></span>
       <span class="chip" id="userchip" hidden></span>
       <button class="btn" type="button" data-act="refresh" data-i="refresh">تحديث</button>
@@ -221,7 +221,7 @@ footer .chip{background:rgba(255,255,255,.14)}
             <h2 data-i="wiTitle">أين يمكن تركيب جهاز جديد؟</h2>
             <div class="form">
               <label><span data-i="wiU">الارتفاع (U)</span><input type="number" id="wu" dir="ltr" min="1" max="60" step="1" value="2"></label>
-              <label><span data-i="wiKw">القدرة (kW)</span><input type="number" id="wk" dir="ltr" min="0.1" max="50" step="0.1" value="0.9"></label>
+              <label><span data-i="wiKw">القدرة (W)</span><input type="number" id="wk" dir="ltr" min="1" max="50000" step="50" value="900"></label>
               <label style="width:auto;display:flex;align-items:center;gap:6px;padding-bottom:6px"><input type="checkbox" id="showfit" checked><span data-i="wiShow">إظهار على المخطط</span></label>
             </div>
             <p class="hint" id="wihint"></p>
@@ -245,7 +245,7 @@ footer .chip{background:rgba(255,255,255,.14)}
   <div class="wrap">
     <span data-i="foot">النظام يقرأ بياناته من Google Sheet ويُحدَّث من صفحة الإعدادات.</span>
     <span style="display:flex;gap:12px;align-items:center">
-      <span class="chip" id="verfoot">v2.3</span>
+      <span class="chip" id="verfoot">v2.4</span>
       <a href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener">ITOC · IT Operations Center</a>
     </span>
   </div>
@@ -267,7 +267,7 @@ footer .chip{background:rgba(255,255,255,.14)}
 <script>
 (function(){
 'use strict';
-const APP_VERSION='2.3';
+const APP_VERSION='2.4';
 const IS_GAS=!!(window.google&&window.google.script&&window.google.script.run);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -275,6 +275,7 @@ const num=x=>'<span class="num">'+esc(x)+'</span>';
 const val=(n,u)=>'<span class="val">'+esc(n)+(u?'<small>'+esc(u)+'</small>':'')+'</span>';
 const nat=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true});
 const f1=x=>(Math.round(x*10)/10).toFixed(1);
+const fW=x=>String(Math.round(x));
 const trunc=(s,n)=>{s=String(s);return s.length>n?s.slice(0,n-1)+'…':s};
 const TYPES=['server','storage','network','security','other'];
 const STATUSES=['Active','Planned','Maintenance','Decommissioned'];
@@ -297,13 +298,13 @@ ar:{
  thP:(w,c)=>`تحذير عند ${w}% وحرج عند ${c}% من سعة طاقة الرف`,thT:(w,c)=>`تحذير عند ${w} °م وحرج عند ${c} °م لحرارة الدخل`,thS:(w,c)=>`تحذير عند ${w}% وحرج عند ${c}% من المساحة المستخدمة`,
  fitKey:'الإطار المتقطع: الرف يناسب الجهاز في أداة التخطيط',
  kLoad:'الحمل الكهربائي المسجل',kHead:'هامش الطاقة',kSpace:'المساحة الحرة',kTemp:'أعلى حرارة دخل',kAlerts:'تنبيهات مفتوحة',
- kLoadN:c=>`من سعة ${c} kW للرفوف`,kHeadN:p=>`حتى حد التخطيط ${p}%`,kSpaceN:t=>`من ${t} U في القاعة`,kTempN:'من القراءات المسجلة',kTempNone:'لا توجد قراءات',kAlertsN:c=>`${c} حرجة`,
+ kLoadN:c=>`من سعة ${c} W للرفوف`,kHeadN:p=>`حتى حد التخطيط ${p}%`,kSpaceN:t=>`من ${t} U في القاعة`,kTempN:'من القراءات المسجلة',kTempNone:'لا توجد قراءات',kAlertsN:c=>`${c} حرجة`,
  detail:'تفاصيل الرف',rack:'رف',power:'الطاقة',inlet:'حرارة الدخل',space:'المساحة',noDevices:'لا توجد أجهزة في هذا الرف',
- device:'الجهاز',type:'النوع',loc:'الموقع (U)',vendorModel:'الشركة / الطراز',ip:'عنوان IP',kw:'kW',status:'الحالة',serial:'الرقم التسلسلي',asset:'رقم الأصل',owner:'الجهة المالكة',notes:'ملاحظات',
+ device:'الجهاز',type:'النوع',loc:'الموقع (U)',vendorModel:'الشركة / الطراز',ip:'عنوان IP',kw:'W',status:'الحالة',serial:'الرقم التسلسلي',asset:'رقم الأصل',owner:'الجهة المالكة',notes:'ملاحظات',
  types:{server:'خادم',storage:'تخزين',network:'شبكة',security:'أمن',other:'أخرى'},
  statuses:{Active:'نشط',Planned:'مخطط',Maintenance:'صيانة',Decommissioned:'خارج الخدمة'},
  searchTitle:'بحث عن جهاز',searchPh:'الاسم أو IP أو الرقم التسلسلي أو رقم الأصل',searchNone:'لا توجد نتائج',searchHint:'اكتب للبحث ليظهر موقع الجهاز في الرف.',
- wiTitle:'أين يمكن تركيب جهاز جديد؟',wiU:'الارتفاع (U)',wiKw:'القدرة (kW)',wiShow:'إظهار على المخطط',
+ wiTitle:'أين يمكن تركيب جهاز جديد؟',wiU:'الارتفاع (U)',wiKw:'القدرة (W)',wiShow:'إظهار على المخطط',
  wiHint:(p,tp)=>`حدود التخطيط: طاقة الرف حتى ${p}% من سعته، وحرارة الدخل ${tp} °م أو أقل، ومساحة متصلة كافية.`,
  best:'أفضل رف',noFit:'لا يناسب أي رف. جرّب جهازاً أصغر أو أضف سعة.',after:'متبقية بعد التركيب',rSpace:'لا توجد مساحة متصلة كافية',rPower:'الطاقة غير كافية',rTemp:'حرارة الدخل مرتفعة',fits:'مناسب',freeU:'U حرة',
  alTitle:'التنبيهات',noAlerts:'لا توجد تنبيهات.',aPower:p=>`الطاقة عند ${p}% من سعة الرف`,aTemp:v=>`حرارة الدخل ${v} °م`,aStale:m=>`آخر قراءة حرارة منذ ${m} دقيقة`,
@@ -312,19 +313,19 @@ ar:{
  emptyTitle:'لا توجد رفوف مسجلة بعد',emptyAdmin:'ابدأ من صفحة الإعدادات: أضف الرفوف ثم الأجهزة داخل كل رف.',emptyViewer:'لم يُسجَّل أي رف بعد. تواصل مع مسؤول النظام.',goSettings:'فتح الإعدادات',
  foot:'النظام يقرأ بياناته من Google Sheet ويُحدَّث من صفحة الإعدادات.',
  sRacksTitle:'الرفوف',addRack:'إضافة رف',editRack:'تعديل',delRack:'حذف',loadSample:'تحميل بيانات تجريبية',
- rackId:'معرّف الرف',rackName:'الاسم',rowF:'الصف',posF:'الموضع في الصف',totalU:'الارتفاع (U)',cap:'سعة الطاقة (kW)',inletF:'حرارة الدخل (°م)',inletNote:'اختيارية، تُدخل يدوياً حتى ربط الحساسات.',devCount:'الأجهزة',actions:'إجراءات',usedTotal:'المستخدم',
- genTitle:'توليد رفوف دفعة واحدة',genRows:'الصفوف (مفصولة بفواصل)',genPer:'عدد الرفوف في كل صف',genU:'ارتفاع الرف (U)',genCap:'سعة الطاقة (kW)',genBtn:'توليد الرفوف',genNote:'الرفوف الموجودة لا تتغير، وتُتجاهل المعرّفات والمواضع المكررة.',genDone:n=>`تم إنشاء ${n} رف`,
+ rackId:'معرّف الرف',rackName:'الاسم',rowF:'الصف',posF:'الموضع في الصف',totalU:'الارتفاع (U)',cap:'سعة الطاقة (W)',inletF:'حرارة الدخل (°م)',inletNote:'اختيارية، تُدخل يدوياً حتى ربط الحساسات.',devCount:'الأجهزة',actions:'إجراءات',usedTotal:'المستخدم',
+ genTitle:'توليد رفوف دفعة واحدة',genRows:'الصفوف (مفصولة بفواصل)',genPer:'عدد الرفوف في كل صف',genU:'ارتفاع الرف (U)',genCap:'سعة الطاقة (W)',genBtn:'توليد الرفوف',genNote:'الرفوف الموجودة لا تتغير، وتُتجاهل المعرّفات والمواضع المكررة.',genDone:n=>`تم إنشاء ${n} رف`,
  sContentsTitle:'محتوى الرف وبيانات أجهزته',pickRack:'اختر الرف',addDevice:'إضافة جهاز',
- devName:'اسم الجهاز',devType:'النوع',devStatus:'الحالة',devRack:'الرف',startU:'بداية الموقع (U)',heightU:'الارتفاع (U)',powerKW:'قدرة الجهاز (kW)',vendor:'الشركة المصنعة',model:'الطراز',
+ devName:'اسم الجهاز',devType:'النوع',devStatus:'الحالة',devRack:'الرف',startU:'بداية الموقع (U)',heightU:'الارتفاع (U)',powerW:'قدرة الجهاز (W)',vendor:'الشركة المصنعة',model:'الطراز',
  freeHint:s=>`المساحات الحرة في الرف: ${s}`,freeNone:'لا توجد مساحة حرة في الرف',devRule:'يُحتسب الجهاز في الطاقة إذا كانت حالته نشط أو صيانة، وفي المساحة ما لم يكن خارج الخدمة.',
- sRoomTitle:'إعدادات القاعة وحدود التنبيه',fRoomName:'اسم القاعة',fDefU:'ارتفاع الرف الافتراضي (U)',fDefCap:'سعة طاقة الرف الافتراضية (kW)',fPlanP:'حد التخطيط للطاقة (%)',fPwW:'تحذير الطاقة (%)',fPwC:'حرج الطاقة (%)',fPlanT:'حد التخطيط لحرارة الدخل (°م)',fTW:'تحذير الحرارة (°م)',fTC:'حرج الحرارة (°م)',fSpW:'تحذير المساحة (%)',fSpC:'حرج المساحة (%)',fStale:'تأخر القراءة بالدقائق (0 = معطل)',
+ sRoomTitle:'إعدادات القاعة وحدود التنبيه',fRoomName:'اسم القاعة',fDefU:'ارتفاع الرف الافتراضي (U)',fDefCap:'سعة طاقة الرف الافتراضية (W)',fPlanP:'حد التخطيط للطاقة (%)',fPwW:'تحذير الطاقة (%)',fPwC:'حرج الطاقة (%)',fPlanT:'حد التخطيط لحرارة الدخل (°م)',fTW:'تحذير الحرارة (°م)',fTC:'حرج الحرارة (°م)',fSpW:'تحذير المساحة (%)',fSpC:'حرج المساحة (%)',fStale:'تأخر القراءة بالدقائق (0 = معطل)',
  save:'حفظ',cancel:'إلغاء',saved:'تم الحفظ',deleted:'تم الحذف',confirmTitle:'تأكيد الحذف',del:'حذف',
  delRackMsg:(id,n)=>`سيُحذف الرف ${id} مع ${n} جهاز. لا يمكن التراجع.`,delDevMsg:n=>`سيُحذف الجهاز ${n}.`,
  addRackTitle:'إضافة رف',editRackTitle:id=>`تعديل الرف ${id}`,addDevTitle:'إضافة جهاز',editDevTitle:n=>`تعديل الجهاز ${n}`,
  errGeneric:'تعذر تنفيذ العملية.',errFatal:'تعذر تحميل البيانات.',
- err:{E_FORBIDDEN:'ليس لديك صلاحية الدخول.',E_ADMIN:'هذه العملية للمسؤولين فقط.',E_RACK_ID:'معرّف الرف: حروف إنجليزية وأرقام و - و _ فقط، حتى 12 خانة.',E_ROW:'الصف مطلوب (حتى 6 خانات).',E_POS:'الموضع رقم صحيح من 1 إلى 99.',E_TOTALU:'ارتفاع الرف رقم صحيح من 1 إلى 60.',E_CAP:'سعة الطاقة بين 0.1 و100 kW.',E_TEMP:'الحرارة بين 0 و60 °م.',
+ err:{E_FORBIDDEN:'ليس لديك صلاحية الدخول.',E_ADMIN:'هذه العملية للمسؤولين فقط.',E_RACK_ID:'معرّف الرف: حروف إنجليزية وأرقام و - و _ فقط، حتى 12 خانة.',E_ROW:'الصف مطلوب (حتى 6 خانات).',E_POS:'الموضع رقم صحيح من 1 إلى 99.',E_TOTALU:'ارتفاع الرف رقم صحيح من 1 إلى 60.',E_CAP:'سعة الطاقة بين 100 و100000 W.',E_TEMP:'الحرارة بين 0 و60 °م.',
   E_RACK_DUP:id=>`المعرّف ${id} مستخدم لرف آخر.`,E_RACK_NONE:id=>`الرف ${id} غير موجود.`,E_POS_DUP:id=>`هذا الموضع مشغول بالرف ${id}.`,E_RACK_SHRINK:u=>`لا يمكن تصغير الرف: يوجد جهاز يصل إلى U${u}.`,E_LIMIT:'تم بلوغ الحد الأقصى لعدد الرفوف.',
-  E_DEV_NAME:'اسم الجهاز مطلوب (حتى 60 حرفاً).',E_DEV_TYPE:'نوع الجهاز غير صالح.',E_DEV_STATUS:'حالة الجهاز غير صالحة.',E_DEV_U:'الموقع والارتفاع أرقام صحيحة من 1 إلى 60.',E_DEV_KW:'قدرة الجهاز بين 0 و50 kW.',E_DEV_RANGE:u=>`الجهاز يتجاوز ارتفاع الرف (${u} U).`,E_DEV_OVERLAP:n=>`الموقع يتداخل مع الجهاز ${n}.`,E_DEV_NONE:'الجهاز غير موجود.',
+  E_DEV_NAME:'اسم الجهاز مطلوب (حتى 60 حرفاً).',E_DEV_TYPE:'نوع الجهاز غير صالح.',E_DEV_STATUS:'حالة الجهاز غير صالحة.',E_DEV_U:'الموقع والارتفاع أرقام صحيحة من 1 إلى 60.',E_DEV_W:'قدرة الجهاز بين 0 و50000 W.',E_DEV_RANGE:u=>`الجهاز يتجاوز ارتفاع الرف (${u} U).`,E_DEV_OVERLAP:n=>`الموقع يتداخل مع الجهاز ${n}.`,E_DEV_NONE:'الجهاز غير موجود.',
   E_GEN:'بيانات التوليد غير صالحة: صفوف حتى 10 (حروف وأرقام)، ورفوف حتى 30 في الصف.',E_SET:k=>`قيمة غير صالحة في الإعدادات: ${k}`,E_THRESH:'يجب أن يكون التحذير أقل من الحرج.',E_NOT_EMPTY:'توجد رفوف مسجلة، لا يمكن تحميل البيانات التجريبية.'}
 },
 en:{
@@ -335,13 +336,13 @@ en:{
  thP:(w,c)=>`Warning at ${w}%, critical at ${c}% of rack power capacity`,thT:(w,c)=>`Warning at ${w} °C, critical at ${c} °C inlet`,thS:(w,c)=>`Warning at ${w}%, critical at ${c}% of space used`,
  fitKey:'Dashed outline: rack fits the device in the placement tool',
  kLoad:'Registered electrical load',kHead:'Power headroom',kSpace:'Free rack space',kTemp:'Hottest inlet',kAlerts:'Open alerts',
- kLoadN:c=>`of ${c} kW rack capacity`,kHeadN:p=>`to the ${p}% planning limit`,kSpaceN:t=>`of ${t} U in the room`,kTempN:'from recorded readings',kTempNone:'No readings',kAlertsN:c=>`${c} critical`,
+ kLoadN:c=>`of ${c} W rack capacity`,kHeadN:p=>`to the ${p}% planning limit`,kSpaceN:t=>`of ${t} U in the room`,kTempN:'from recorded readings',kTempNone:'No readings',kAlertsN:c=>`${c} critical`,
  detail:'Rack detail',rack:'Rack',power:'Power',inlet:'Inlet temp',space:'Space',noDevices:'No devices in this rack',
- device:'Device',type:'Type',loc:'Location (U)',vendorModel:'Vendor / Model',ip:'IP address',kw:'kW',status:'Status',serial:'Serial number',asset:'Asset tag',owner:'Owner',notes:'Notes',
+ device:'Device',type:'Type',loc:'Location (U)',vendorModel:'Vendor / Model',ip:'IP address',kw:'W',status:'Status',serial:'Serial number',asset:'Asset tag',owner:'Owner',notes:'Notes',
  types:{server:'Server',storage:'Storage',network:'Network',security:'Security',other:'Other'},
  statuses:{Active:'Active',Planned:'Planned',Maintenance:'Maintenance',Decommissioned:'Decommissioned'},
  searchTitle:'Find a device',searchPh:'Name, IP, serial number or asset tag',searchNone:'No results',searchHint:'Type to find where a device sits in its rack.',
- wiTitle:'Where can a new device go?',wiU:'Height (U)',wiKw:'Power (kW)',wiShow:'Show on floor plan',
+ wiTitle:'Where can a new device go?',wiU:'Height (U)',wiKw:'Power (W)',wiShow:'Show on floor plan',
  wiHint:(p,tp)=>`Planning limits: rack power up to ${p}% of capacity, inlet ${tp} °C or lower, enough contiguous U.`,
  best:'Best fit',noFit:'No rack fits. Try a smaller device or add capacity.',after:'left after placement',rSpace:'not enough contiguous U',rPower:'not enough power',rTemp:'inlet too warm',fits:'Fits',freeU:'free U',
  alTitle:'Alerts',noAlerts:'No alerts.',aPower:p=>`Power at ${p}% of rack capacity`,aTemp:v=>`Inlet temperature ${v} °C`,aStale:m=>`Temperature last read ${m} min ago`,
@@ -350,19 +351,19 @@ en:{
  emptyTitle:'No racks registered yet',emptyAdmin:'Start in Settings: add racks, then the devices inside each rack.',emptyViewer:'No rack has been registered yet. Contact the system administrator.',goSettings:'Open Settings',
  foot:'Data is read from a Google Sheet and maintained from the Settings page.',
  sRacksTitle:'Racks',addRack:'Add rack',editRack:'Edit',delRack:'Delete',loadSample:'Load sample data',
- rackId:'Rack ID',rackName:'Name',rowF:'Row',posF:'Position in row',totalU:'Height (U)',cap:'Power capacity (kW)',inletF:'Inlet temp (°C)',inletNote:'Optional. Enter by hand until sensors are connected.',devCount:'Devices',actions:'Actions',usedTotal:'Used',
- genTitle:'Generate racks in bulk',genRows:'Rows (comma separated)',genPer:'Racks per row',genU:'Rack height (U)',genCap:'Power capacity (kW)',genBtn:'Generate racks',genNote:'Existing racks are not changed; duplicate IDs and positions are skipped.',genDone:n=>`${n} racks created`,
+ rackId:'Rack ID',rackName:'Name',rowF:'Row',posF:'Position in row',totalU:'Height (U)',cap:'Power capacity (W)',inletF:'Inlet temp (°C)',inletNote:'Optional. Enter by hand until sensors are connected.',devCount:'Devices',actions:'Actions',usedTotal:'Used',
+ genTitle:'Generate racks in bulk',genRows:'Rows (comma separated)',genPer:'Racks per row',genU:'Rack height (U)',genCap:'Power capacity (W)',genBtn:'Generate racks',genNote:'Existing racks are not changed; duplicate IDs and positions are skipped.',genDone:n=>`${n} racks created`,
  sContentsTitle:'Rack contents and device data',pickRack:'Choose rack',addDevice:'Add device',
- devName:'Device name',devType:'Type',devStatus:'Status',devRack:'Rack',startU:'Start position (U)',heightU:'Height (U)',powerKW:'Device power (kW)',vendor:'Vendor',model:'Model',
+ devName:'Device name',devType:'Type',devStatus:'Status',devRack:'Rack',startU:'Start position (U)',heightU:'Height (U)',powerW:'Device power (W)',vendor:'Vendor',model:'Model',
  freeHint:s=>`Free space in this rack: ${s}`,freeNone:'No free space in this rack',devRule:'A device counts toward power when Active or in Maintenance, and toward space unless Decommissioned.',
- sRoomTitle:'Room settings and alert limits',fRoomName:'Room name',fDefU:'Default rack height (U)',fDefCap:'Default rack power capacity (kW)',fPlanP:'Power planning limit (%)',fPwW:'Power warning (%)',fPwC:'Power critical (%)',fPlanT:'Inlet planning limit (°C)',fTW:'Temperature warning (°C)',fTC:'Temperature critical (°C)',fSpW:'Space warning (%)',fSpC:'Space critical (%)',fStale:'Stale reading after minutes (0 = off)',
+ sRoomTitle:'Room settings and alert limits',fRoomName:'Room name',fDefU:'Default rack height (U)',fDefCap:'Default rack power capacity (W)',fPlanP:'Power planning limit (%)',fPwW:'Power warning (%)',fPwC:'Power critical (%)',fPlanT:'Inlet planning limit (°C)',fTW:'Temperature warning (°C)',fTC:'Temperature critical (°C)',fSpW:'Space warning (%)',fSpC:'Space critical (%)',fStale:'Stale reading after minutes (0 = off)',
  save:'Save',cancel:'Cancel',saved:'Saved',deleted:'Deleted',confirmTitle:'Confirm deletion',del:'Delete',
  delRackMsg:(id,n)=>`Rack ${id} and its ${n} devices will be deleted. This cannot be undone.`,delDevMsg:n=>`Device ${n} will be deleted.`,
  addRackTitle:'Add rack',editRackTitle:id=>`Edit rack ${id}`,addDevTitle:'Add device',editDevTitle:n=>`Edit device ${n}`,
  errGeneric:'The action could not be completed.',errFatal:'Data could not be loaded.',
- err:{E_FORBIDDEN:'You do not have access.',E_ADMIN:'This action is for administrators only.',E_RACK_ID:'Rack ID: letters, digits, - and _ only, up to 12 characters.',E_ROW:'Row is required (up to 6 characters).',E_POS:'Position must be a whole number from 1 to 99.',E_TOTALU:'Rack height must be a whole number from 1 to 60.',E_CAP:'Power capacity must be between 0.1 and 100 kW.',E_TEMP:'Temperature must be between 0 and 60 °C.',
+ err:{E_FORBIDDEN:'You do not have access.',E_ADMIN:'This action is for administrators only.',E_RACK_ID:'Rack ID: letters, digits, - and _ only, up to 12 characters.',E_ROW:'Row is required (up to 6 characters).',E_POS:'Position must be a whole number from 1 to 99.',E_TOTALU:'Rack height must be a whole number from 1 to 60.',E_CAP:'Power capacity must be between 100 and 100000 W.',E_TEMP:'Temperature must be between 0 and 60 °C.',
   E_RACK_DUP:id=>`ID ${id} is already used by another rack.`,E_RACK_NONE:id=>`Rack ${id} does not exist.`,E_POS_DUP:id=>`That position is taken by rack ${id}.`,E_RACK_SHRINK:u=>`Cannot shrink the rack: a device reaches U${u}.`,E_LIMIT:'The maximum number of racks has been reached.',
-  E_DEV_NAME:'Device name is required (up to 60 characters).',E_DEV_TYPE:'Invalid device type.',E_DEV_STATUS:'Invalid device status.',E_DEV_U:'Start position and height must be whole numbers from 1 to 60.',E_DEV_KW:'Device power must be between 0 and 50 kW.',E_DEV_RANGE:u=>`The device goes beyond the rack height (${u} U).`,E_DEV_OVERLAP:n=>`The location overlaps device ${n}.`,E_DEV_NONE:'Device does not exist.',
+  E_DEV_NAME:'Device name is required (up to 60 characters).',E_DEV_TYPE:'Invalid device type.',E_DEV_STATUS:'Invalid device status.',E_DEV_U:'Start position and height must be whole numbers from 1 to 60.',E_DEV_W:'Device power must be between 0 and 50000 W.',E_DEV_RANGE:u=>`The device goes beyond the rack height (${u} U).`,E_DEV_OVERLAP:n=>`The location overlaps device ${n}.`,E_DEV_NONE:'Device does not exist.',
   E_GEN:'Invalid generation data: up to 10 rows (letters or digits) and up to 30 racks per row.',E_SET:k=>`Invalid settings value: ${k}`,E_THRESH:'Warning must be lower than critical.',E_NOT_EMPTY:'Racks already exist, so sample data cannot be loaded.'}
 }};
 const S={lang:'ar',tab:'dash',metric:'power',selRack:null,selDev:null,cRack:null,q:''};
@@ -411,8 +412,8 @@ function enrich(){
   DB.racks.forEach(r=>{
     r.devs=DB.devices.filter(d=>d.RackID===r.RackID).sort((a,b)=>b.StartU-a.StartU);
     r.usedU=0;r.kw=0;
-    r.devs.forEach(d=>{if(occupies(d))r.usedU+=d.HeightU;if(draws(d))r.kw+=d.PowerKW});
-    r.pct=r.PowerCapKW?r.kw/r.PowerCapKW*100:0;
+    r.devs.forEach(d=>{if(occupies(d))r.usedU+=d.HeightU;if(draws(d))r.kw+=d.PowerW});
+    r.pct=r.PowerCapW?r.kw/r.PowerCapW*100:0;
     r.free=Math.max(0,r.TotalU-r.usedU);
     const occ=occupancy(r);let run=0,best=0;
     for(let i=1;i<=r.TotalU;i++){if(occ[i])run=0;else{run++;best=Math.max(best,run)}}
@@ -439,11 +440,11 @@ function alerts(){
   return a.sort((x,y)=>(y.sev==='crit')-(x.sev==='crit'));
 }
 function fitList(){
-  const u=Math.max(1,Math.min(60,Math.round(+$('wu').value)||1)),kw=Math.max(0.1,+$('wk').value||0.1),T=DB.settings;
+  const u=Math.max(1,Math.min(60,Math.round(+$('wu').value)||1)),kw=Math.max(1,+$('wk').value||1),T=DB.settings;
   return DB.racks.map(r=>{
     const why=[];
     if(r.block<u)why.push('rSpace');
-    const lim=r.PowerCapKW*T.PlanPowerPct/100;
+    const lim=r.PowerCapW*T.PlanPowerPct/100;
     if(r.kw+kw>lim+1e-9)why.push('rPower');
     if(r.t!==null&&r.t>T.PlanTempC)why.push('rTemp');
     return{r,why,left:lim-(r.kw+kw)};
@@ -484,14 +485,14 @@ function renderDash(){
 }
 function renderKpis(){
   const R=DB.racks,T=DB.settings;
-  const load=R.reduce((a,r)=>a+r.kw,0),cap=R.reduce((a,r)=>a+r.PowerCapKW,0);
-  const head=R.reduce((a,r)=>a+Math.max(0,r.PowerCapKW*T.PlanPowerPct/100-r.kw),0);
+  const load=R.reduce((a,r)=>a+r.kw,0),cap=R.reduce((a,r)=>a+r.PowerCapW,0);
+  const head=R.reduce((a,r)=>a+Math.max(0,r.PowerCapW*T.PlanPowerPct/100-r.kw),0);
   const free=R.reduce((a,r)=>a+r.free,0),tot=R.reduce((a,r)=>a+r.TotalU,0);
   const temps=R.filter(r=>r.t!==null).map(r=>r.t),hot=temps.length?Math.max(...temps):null;
   const al=alerts(),crit=al.filter(x=>x.sev==='crit').length;
   $('kpis').innerHTML=
-   `<div class="kpi"><div class="l">${t('kLoad')}</div><div class="v">${val(f1(load),'kW')}</div><div class="n">${t('kLoadN',f1(cap))}</div><div class="meter"><i style="width:${cap?Math.min(100,load/cap*100):0}%"></i></div></div>`+
-   `<div class="kpi"><div class="l">${t('kHead')}</div><div class="v">${val(f1(head),'kW')}</div><div class="n">${t('kHeadN',T.PlanPowerPct)}</div></div>`+
+   `<div class="kpi"><div class="l">${t('kLoad')}</div><div class="v">${val(fW(load),'W')}</div><div class="n">${t('kLoadN',fW(cap))}</div><div class="meter"><i style="width:${cap?Math.min(100,load/cap*100):0}%"></i></div></div>`+
+   `<div class="kpi"><div class="l">${t('kHead')}</div><div class="v">${val(fW(head),'W')}</div><div class="n">${t('kHeadN',T.PlanPowerPct)}</div></div>`+
    `<div class="kpi"><div class="l">${t('kSpace')}</div><div class="v">${val(free,'U')}</div><div class="n">${t('kSpaceN',tot)}</div></div>`+
    `<div class="kpi ${hot!==null&&hot>=T.TempWarnC?'bad':''}"><div class="l">${t('kTemp')}</div><div class="v">${hot===null?'—':val(f1(hot),'°C')}</div><div class="n">${hot===null?t('kTempNone'):t('kTempN')}</div></div>`+
    `<div class="kpi ${crit?'bad':''}"><div class="l">${t('kAlerts')}</div><div class="v">${num(al.length)}</div><div class="n">${t('kAlertsN',crit)}</div></div>`;
@@ -513,7 +514,7 @@ function renderPlan(){
   DB.racks.forEach(r=>{
     const x=X0+(r.Position-1)*(W+G),y=TOP+rows.indexOf(r.Row)*(H+AI),v=metricVal(r,m),st=stateOf(m,v);
     const main=m==='power'?Math.round(v)+'%':m==='temp'?(v===null?'—':f1(v)+'°'):r.usedU+'/'+r.TotalU+'U';
-    const sub=m==='power'?f1(r.kw)+' / '+f1(r.PowerCapKW)+' kW':m==='temp'?(v===null?t('none'):'°C'):r.free+' U';
+    const sub=m==='power'?fW(r.kw)+' / '+fW(r.PowerCapW)+' W':m==='temp'?(v===null?t('none'):'°C'):r.free+' U';
     s+=`<g class="rack s-${st}${S.selRack===r.RackID?' sel':''}" data-rack="${esc(r.RackID)}" tabindex="0" role="button" aria-label="${esc(t('rack'))} ${esc(r.RackID)}: ${esc(main)}">`+
        `<rect class="rk" x="${x}" y="${y}" width="${W}" height="${H}" rx="4"/>`+
        `<text x="${x+10}" y="${y+20}" font-size="13" font-weight="700" fill="var(--ink)">${esc(r.RackID)}${r.stale?' ⚠':''}</text>`+
@@ -530,15 +531,15 @@ function renderDetail(){
   const r=rackById(S.selRack);if(!r){$('detail').innerHTML='';return}
   const sp=stateOf('power',r.pct),st=stateOf('temp',r.t),ss=stateOf('space',r.TotalU?r.usedU/r.TotalU*100:0);
   const sel=r.devs.find(d=>d.DeviceID===S.selDev);
-  const rows=r.devs.map(d=>`<tr data-dev="${esc(d.DeviceID)}" class="${d.DeviceID===S.selDev?'sel':''}"><td><i class="dot" style="background:${TCOL[d.Type]}"></i>${esc(d.Name)}</td><td>${esc(t('types')[d.Type])}</td><td class="m">${locText(d)}</td><td>${esc([d.Vendor,d.Model].filter(Boolean).join(' '))}</td><td class="m">${esc(d.IP)}</td><td class="m">${f1(d.PowerKW)}</td><td><span class="pill ${STCLS[d.Status]}">${esc(t('statuses')[d.Status])}</span></td></tr>`).join('');
+  const rows=r.devs.map(d=>`<tr data-dev="${esc(d.DeviceID)}" class="${d.DeviceID===S.selDev?'sel':''}"><td><i class="dot" style="background:${TCOL[d.Type]}"></i>${esc(d.Name)}</td><td>${esc(t('types')[d.Type])}</td><td class="m">${locText(d)}</td><td>${esc([d.Vendor,d.Model].filter(Boolean).join(' '))}</td><td class="m">${esc(d.IP)}</td><td class="m">${f1(d.PowerW)}</td><td><span class="pill ${STCLS[d.Status]}">${esc(t('statuses')[d.Status])}</span></td></tr>`).join('');
   let card='';
   if(sel){
-    const kv=[['loc',locText(sel)],['type',t('types')[sel.Type]],['status',t('statuses')[sel.Status]],['kw',f1(sel.PowerKW)+' kW'],['vendorModel',[sel.Vendor,sel.Model].filter(Boolean).join(' ')],['serial',sel.Serial],['asset',sel.AssetTag],['ip',sel.IP],['owner',sel.Owner],['notes',sel.Notes]].filter(x=>x[1]);
+    const kv=[['loc',locText(sel)],['type',t('types')[sel.Type]],['status',t('statuses')[sel.Status]],['kw',fW(sel.PowerW)+' W'],['vendorModel',[sel.Vendor,sel.Model].filter(Boolean).join(' ')],['serial',sel.Serial],['asset',sel.AssetTag],['ip',sel.IP],['owner',sel.Owner],['notes',sel.Notes]].filter(x=>x[1]);
     card=`<div class="devcard"><b>${esc(sel.Name)}</b> <span class="muted">· ${esc(t('rack'))} ${esc(r.RackID)}</span><dl>${kv.map(([k,v])=>`<div><dt>${esc(t(k))}</dt><dd>${['ip','serial','asset','loc'].includes(k)?num(v):esc(v)}</dd></div>`).join('')}</dl></div>`;
   }
   $('detail').innerHTML=`<h2><span>${esc(t('detail'))} <span dir="ltr">${esc(rackLabel(r))}</span></span><span><span class="pill s-${sp}">${esc(t('power'))}: ${esc(t(sp))}</span> <span class="pill s-${st}">${esc(t('inlet'))}: ${esc(t(st))}</span> <span class="pill s-${ss}">${esc(t('space'))}: ${esc(t(ss))}</span></span></h2>`+
    `<div class="detail"><div class="elev">${elev(r,S.selDev,'dash')}</div><div class="right">`+
-   `<div class="stats"><div class="stat"><div class="l">${t('power')}</div><div class="v">${val(f1(r.kw)+' / '+f1(r.PowerCapKW),'kW')}</div></div>`+
+   `<div class="stats"><div class="stat"><div class="l">${t('power')}</div><div class="v">${val(fW(r.kw)+' / '+fW(r.PowerCapW),'W')}</div></div>`+
    `<div class="stat"><div class="l">${t('inlet')}</div><div class="v">${r.t===null?'—':val(f1(r.t),'°C')}</div></div>`+
    `<div class="stat"><div class="l">${t('space')}</div><div class="v">${val(r.usedU+' / '+r.TotalU,'U')}</div></div></div>`+
    (r.devs.length?`<div class="scroll"><table><thead><tr><th>${t('device')}</th><th>${t('type')}</th><th>${t('loc')}</th><th>${t('vendorModel')}</th><th>${t('ip')}</th><th>${t('kw')}</th><th>${t('status')}</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<p class="muted">${esc(t('noDevices'))}</p>`)+card+`</div></div>`;
@@ -553,7 +554,7 @@ function renderWi(){
   const T=DB.settings,f=fitList(),ok=f.filter(x=>!x.why.length);
   $('wihint').textContent=t('wiHint',T.PlanPowerPct,T.PlanTempC);
   let h='';
-  if(ok.length){const b=ok[0];h+=`<div class="best"><div class="muted" style="font-size:12px;font-weight:600">${t('best')}</div><b>${t('rack')} ${esc(b.r.RackID)}</b> <span class="muted">${num(f1(b.left))} kW ${t('after')}</span></div>`}
+  if(ok.length){const b=ok[0];h+=`<div class="best"><div class="muted" style="font-size:12px;font-weight:600">${t('best')}</div><b>${t('rack')} ${esc(b.r.RackID)}</b> <span class="muted">${num(fW(b.left))} W ${t('after')}</span></div>`}
   else h+=`<div class="best no">${esc(t('noFit'))}</div>`;
   h+='<ul class="list">'+f.map(x=>`<li><span><button class="link" type="button" data-rack="${esc(x.r.RackID)}">${t('rack')} ${esc(x.r.RackID)}</button> <span class="muted">${num(x.r.block)} ${t('freeU')}</span></span>`+(x.why.length?`<span class="pill s-crit">${x.why.map(k=>esc(t(k))).join(SEP())}</span>`:`<span class="pill s-good">${t('fits')}</span>`)+'</li>').join('')+'</ul>';
   $('wi').innerHTML=h;
@@ -574,7 +575,7 @@ function renderStatus(){
 }
 
 /* ───────── settings page ───────── */
-const RF=[['DefaultTotalU','fDefU',1,60,1],['DefaultPowerCapKW','fDefCap',0.1,100,0.1],['PlanPowerPct','fPlanP',1,100,1],['PowerWarnPct','fPwW',1,100,1],['PowerCritPct','fPwC',1,150,1],['PlanTempC','fPlanT',10,45,0.5],['TempWarnC','fTW',10,50,0.5],['TempCritC','fTC',10,60,0.5],['SpaceWarnPct','fSpW',1,100,1],['SpaceCritPct','fSpC',1,100,1],['StaleMinutes','fStale',0,1440,1]];
+const RF=[['DefaultTotalU','fDefU',1,60,1],['DefaultPowerCapW','fDefCap',100,100000,100],['PlanPowerPct','fPlanP',1,100,1],['PowerWarnPct','fPwW',1,100,1],['PowerCritPct','fPwC',1,150,1],['PlanTempC','fPlanT',10,45,0.5],['TempWarnC','fTW',10,50,0.5],['TempCritC','fTC',10,60,0.5],['SpaceWarnPct','fSpW',1,100,1],['SpaceCritPct','fSpC',1,100,1],['StaleMinutes','fStale',0,1440,1]];
 const SETLAB={};RF.forEach(f=>SETLAB[f[0]]=f[1]);
 function renderSet(){
   const sorted=[...DB.racks].sort((a,b)=>nat(a.Row,b.Row)||a.Position-b.Position);
@@ -583,21 +584,21 @@ function renderSet(){
 }
 function renderRacksCard(sorted){
   const T=DB.settings;
-  const rows=sorted.map(r=>`<tr><td><b>${esc(r.RackID)}</b></td><td>${esc(r.Name!==r.RackID?r.Name:'')}</td><td>${esc(r.Row)}</td><td class="m">${r.Position}</td><td class="m">${r.usedU} / ${r.TotalU}</td><td class="m">${f1(r.PowerCapKW)}</td><td class="m">${r.t===null?'—':f1(r.t)}</td><td class="m">${r.devs.length}</td><td><div class="row-actions"><button type="button" class="btn sm" data-act="editRack" data-id="${esc(r.RackID)}">${t('editRack')}</button><button type="button" class="btn sm" data-act="delRack" data-id="${esc(r.RackID)}">${t('delRack')}</button></div></td></tr>`).join('');
+  const rows=sorted.map(r=>`<tr><td><b>${esc(r.RackID)}</b></td><td>${esc(r.Name!==r.RackID?r.Name:'')}</td><td>${esc(r.Row)}</td><td class="m">${r.Position}</td><td class="m">${r.usedU} / ${r.TotalU}</td><td class="m">${fW(r.PowerCapW)}</td><td class="m">${r.t===null?'—':f1(r.t)}</td><td class="m">${r.devs.length}</td><td><div class="row-actions"><button type="button" class="btn sm" data-act="editRack" data-id="${esc(r.RackID)}">${t('editRack')}</button><button type="button" class="btn sm" data-act="delRack" data-id="${esc(r.RackID)}">${t('delRack')}</button></div></td></tr>`).join('');
   $('set-racks').innerHTML=`<h2><span>${t('sRacksTitle')} <span class="muted num">(${sorted.length})</span></span><span class="toolbar">`+
    (sorted.length?'':`<button type="button" class="btn" data-act="loadSample">${t('loadSample')}</button>`)+
    `<button type="button" class="btn pri" data-act="addRack">${t('addRack')}</button></span></h2>`+
    (sorted.length?`<div class="scroll"><table><thead><tr><th>${t('rackId')}</th><th>${t('rackName')}</th><th>${t('rowF')}</th><th>${t('posF')}</th><th>${t('usedTotal')} U</th><th>${t('cap')}</th><th>${t('inletF')}</th><th>${t('devCount')}</th><th>${t('actions')}</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<p class="muted">${esc(t('emptyAdmin'))}</p>`)+
-   `<h3>${t('genTitle')}</h3><div class="fgrid"><label>${t('genRows')}<input id="g-rows" dir="ltr" value="A, B"></label><label>${t('genPer')}<input id="g-per" dir="ltr" type="number" min="1" max="30" step="1" value="5"></label><label>${t('genU')}<input id="g-u" dir="ltr" type="number" min="1" max="60" step="1" value="${T.DefaultTotalU}"></label><label>${t('genCap')}<input id="g-cap" dir="ltr" type="number" min="0.1" max="100" step="0.1" value="${T.DefaultPowerCapKW}"></label></div>`+
+   `<h3>${t('genTitle')}</h3><div class="fgrid"><label>${t('genRows')}<input id="g-rows" dir="ltr" value="A, B"></label><label>${t('genPer')}<input id="g-per" dir="ltr" type="number" min="1" max="30" step="1" value="5"></label><label>${t('genU')}<input id="g-u" dir="ltr" type="number" min="1" max="60" step="1" value="${T.DefaultTotalU}"></label><label>${t('genCap')}<input id="g-cap" dir="ltr" type="number" min="100" max="100000" step="100" value="${T.DefaultPowerCapW}"></label></div>`+
    `<p class="hint" style="margin-top:8px">${esc(t('genNote'))}</p><button type="button" class="btn" data-act="gen">${t('genBtn')}</button><p class="err" id="g-err" role="alert"></p>`;
 }
 function renderContents(sorted){
   const r=rackById(S.cRack);
   if(!r){$('set-contents').innerHTML=`<h2>${t('sContentsTitle')}</h2><p class="muted">${esc(t('emptyAdmin'))}</p>`;return}
-  const rows=r.devs.map(d=>`<tr><td><i class="dot" style="background:${TCOL[d.Type]}"></i>${esc(d.Name)}</td><td>${esc(t('types')[d.Type])}</td><td class="m">${locText(d)}</td><td class="m">${f1(d.PowerKW)}</td><td><span class="pill ${STCLS[d.Status]}">${esc(t('statuses')[d.Status])}</span></td><td>${esc([d.Vendor,d.Model].filter(Boolean).join(' '))}</td><td class="m">${esc(d.IP)}</td><td class="m">${esc(d.Serial)}</td><td class="m">${esc(d.AssetTag)}</td><td>${esc(d.Owner)}</td><td><div class="row-actions"><button type="button" class="btn sm" data-act="editDev" data-id="${esc(d.DeviceID)}">${t('editRack')}</button><button type="button" class="btn sm" data-act="delDev" data-id="${esc(d.DeviceID)}">${t('delRack')}</button></div></td></tr>`).join('');
+  const rows=r.devs.map(d=>`<tr><td><i class="dot" style="background:${TCOL[d.Type]}"></i>${esc(d.Name)}</td><td>${esc(t('types')[d.Type])}</td><td class="m">${locText(d)}</td><td class="m">${f1(d.PowerW)}</td><td><span class="pill ${STCLS[d.Status]}">${esc(t('statuses')[d.Status])}</span></td><td>${esc([d.Vendor,d.Model].filter(Boolean).join(' '))}</td><td class="m">${esc(d.IP)}</td><td class="m">${esc(d.Serial)}</td><td class="m">${esc(d.AssetTag)}</td><td>${esc(d.Owner)}</td><td><div class="row-actions"><button type="button" class="btn sm" data-act="editDev" data-id="${esc(d.DeviceID)}">${t('editRack')}</button><button type="button" class="btn sm" data-act="delDev" data-id="${esc(d.DeviceID)}">${t('delRack')}</button></div></td></tr>`).join('');
   $('set-contents').innerHTML=`<h2><span>${t('sContentsTitle')}</span><button type="button" class="btn pri" data-act="addDev">${t('addDevice')}</button></h2>`+
    `<div class="sel-row"><label>${t('pickRack')}<select id="cr-sel">${sorted.map(x=>`<option value="${esc(x.RackID)}"${x.RackID===r.RackID?' selected':''}>${esc(rackLabel(x))}</option>`).join('')}</select></label>`+
-   `<span class="summary"><span>${t('space')}: ${val(r.usedU+' / '+r.TotalU,'U')}</span><span>${t('power')}: ${val(f1(r.kw)+' / '+f1(r.PowerCapKW),'kW')}</span></span></div>`+
+   `<span class="summary"><span>${t('space')}: ${val(r.usedU+' / '+r.TotalU,'U')}</span><span>${t('power')}: ${val(fW(r.kw)+' / '+fW(r.PowerCapW),'W')}</span></span></div>`+
    `<div class="detail"><div class="elev">${elev(r,null,'set')}</div><div class="right">`+
    (r.devs.length?`<div class="scroll"><table><thead><tr><th>${t('device')}</th><th>${t('type')}</th><th>${t('loc')}</th><th>${t('kw')}</th><th>${t('status')}</th><th>${t('vendorModel')}</th><th>${t('ip')}</th><th>${t('serial')}</th><th>${t('asset')}</th><th>${t('owner')}</th><th>${t('actions')}</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<p class="muted">${esc(t('noDevices'))}</p>`)+
    `<p class="hint" style="margin-top:8px">${esc(t('devRule'))}</p></div></div>`;
@@ -642,7 +643,7 @@ function rackForm(r,isNew){
    `<label>${t('rowF')}<input id="r-row" dir="ltr" maxlength="6" value="${esc(r.Row)}"></label>`+
    `<label>${t('posF')}<input id="r-pos" dir="ltr" type="number" min="1" max="99" step="1" value="${esc(r.Position)}"></label>`+
    `<label>${t('totalU')}<input id="r-u" dir="ltr" type="number" min="1" max="60" step="1" value="${esc(r.TotalU)}"></label>`+
-   `<label>${t('cap')}<input id="r-cap" dir="ltr" type="number" min="0.1" max="100" step="0.1" value="${esc(r.PowerCapKW)}"></label>`+
+   `<label>${t('cap')}<input id="r-cap" dir="ltr" type="number" min="100" max="100000" step="100" value="${esc(r.PowerCapW)}"></label>`+
    `<label>${t('inletF')}<input id="r-temp" dir="ltr" type="number" min="0" max="60" step="0.1" value="${r.InletTempC==null?'':esc(r.InletTempC)}"><small>${esc(t('inletNote'))}</small></label>`+
    `<label class="full">${t('notes')}<textarea id="r-notes" maxlength="200" rows="2">${esc(r.Notes)}</textarea></label></div>`;
 }
@@ -652,10 +653,10 @@ function openRackForm(id){
   if(!cur){
     const row=DB.racks.length?[...DB.racks].sort((a,b)=>nat(a.Row,b.Row)).slice(-1)[0].Row:'A';
     const used=DB.racks.filter(x=>x.Row===row).map(x=>x.Position);let pos=1;while(used.includes(pos))pos++;
-    r={RackID:'',Name:'',Row:row,Position:pos,TotalU:T.DefaultTotalU,PowerCapKW:T.DefaultPowerCapKW,InletTempC:null,Notes:''};
+    r={RackID:'',Name:'',Row:row,Position:pos,TotalU:T.DefaultTotalU,PowerCapW:T.DefaultPowerCapW,InletTempC:null,Notes:''};
   }
   openModal(cur?t('editRackTitle',cur.RackID):t('addRackTitle'),rackForm(r,!cur),{onSave:async()=>{
-    const snap=await call('api_saveRack',{RackID:cur?cur.RackID:v('r-id'),Name:v('r-name'),Row:v('r-row'),Position:v('r-pos'),TotalU:v('r-u'),PowerCapKW:v('r-cap'),InletTempC:v('r-temp'),Notes:v('r-notes')},!cur);
+    const snap=await call('api_saveRack',{RackID:cur?cur.RackID:v('r-id'),Name:v('r-name'),Row:v('r-row'),Position:v('r-pos'),TotalU:v('r-u'),PowerCapW:v('r-cap'),InletTempC:v('r-temp'),Notes:v('r-notes')},!cur);
     if(!cur)S.cRack=v('r-id');
     commit(snap,t('saved'));
   }});
@@ -669,7 +670,7 @@ function updFree(){
 function openDevForm(id){
   const cur=id?DB.devices.find(d=>d.DeviceID===id):null;
   const rk=rackById(S.cRack)||DB.racks[0];
-  const d=cur||{DeviceID:'',RackID:rk.RackID,Name:'',Type:'server',Status:'Active',StartU:(freeRanges(rk)[0]||'1').split('–')[0],HeightU:1,PowerKW:'',Vendor:'',Model:'',Serial:'',AssetTag:'',IP:'',Owner:'',Notes:''};
+  const d=cur||{DeviceID:'',RackID:rk.RackID,Name:'',Type:'server',Status:'Active',StartU:(freeRanges(rk)[0]||'1').split('–')[0],HeightU:1,PowerW:'',Vendor:'',Model:'',Serial:'',AssetTag:'',IP:'',Owner:'',Notes:''};
   const sorted=[...DB.racks].sort((a,b)=>nat(a.Row,b.Row)||a.Position-b.Position);
   const body=`<input type="hidden" id="d-id" value="${esc(d.DeviceID)}"><div class="fgrid">`+
    `<label class="full">${t('devName')}<input id="d-name" maxlength="60" value="${esc(d.Name)}"></label>`+
@@ -678,7 +679,7 @@ function openDevForm(id){
    `<label>${t('devRack')}<select id="d-rack">${sorted.map(x=>`<option value="${esc(x.RackID)}"${x.RackID===d.RackID?' selected':''}>${esc(rackLabel(x))}</option>`).join('')}</select></label>`+
    `<label>${t('startU')}<input id="d-start" dir="ltr" type="number" min="1" max="60" step="1" value="${esc(d.StartU)}"></label>`+
    `<label>${t('heightU')}<input id="d-h" dir="ltr" type="number" min="1" max="60" step="1" value="${esc(d.HeightU)}"></label>`+
-   `<label>${t('powerKW')}<input id="d-kw" dir="ltr" type="number" min="0" max="50" step="0.1" value="${esc(d.PowerKW)}"></label>`+
+   `<label>${t('powerW')}<input id="d-kw" dir="ltr" type="number" min="0" max="50000" step="10" value="${esc(d.PowerW)}"></label>`+
    `<p class="hint full" id="d-free" style="margin:0"></p>`+
    `<label>${t('vendor')}<input id="d-vendor" maxlength="60" value="${esc(d.Vendor)}"></label>`+
    `<label>${t('model')}<input id="d-model" dir="ltr" maxlength="60" value="${esc(d.Model)}"></label>`+
@@ -688,7 +689,7 @@ function openDevForm(id){
    `<label>${t('owner')}<input id="d-owner" maxlength="80" value="${esc(d.Owner)}"></label>`+
    `<label class="full">${t('notes')}<textarea id="d-notes" maxlength="300" rows="2">${esc(d.Notes)}</textarea></label></div>`;
   openModal(cur?t('editDevTitle',cur.Name):t('addDevTitle'),body,{onSave:async()=>{
-    const snap=await call('api_saveDevice',{DeviceID:v('d-id'),Name:v('d-name'),Type:v('d-type'),Status:v('d-status'),RackID:v('d-rack'),StartU:v('d-start'),HeightU:v('d-h'),PowerKW:v('d-kw'),Vendor:v('d-vendor'),Model:v('d-model'),Serial:v('d-serial'),AssetTag:v('d-asset'),IP:v('d-ip'),Owner:v('d-owner'),Notes:v('d-notes')});
+    const snap=await call('api_saveDevice',{DeviceID:v('d-id'),Name:v('d-name'),Type:v('d-type'),Status:v('d-status'),RackID:v('d-rack'),StartU:v('d-start'),HeightU:v('d-h'),PowerW:v('d-kw'),Vendor:v('d-vendor'),Model:v('d-model'),Serial:v('d-serial'),AssetTag:v('d-asset'),IP:v('d-ip'),Owner:v('d-owner'),Notes:v('d-notes')});
     S.cRack=v('d-rack');commit(snap,t('saved'));
   }});
   updFree();
@@ -705,7 +706,7 @@ const actions={
   gen:async el=>{
     $('g-err').textContent='';el.disabled=true;
     try{
-      const snap=await call('api_generateRacks',{rows:v('g-rows').split(/[,،\s]+/).filter(Boolean),perRow:v('g-per'),totalU:v('g-u'),powerCapKW:v('g-cap')});
+      const snap=await call('api_generateRacks',{rows:v('g-rows').split(/[,،\s]+/).filter(Boolean),perRow:v('g-per'),totalU:v('g-u'),powerCapW:v('g-cap')});
       const n=snap.created||0;commit(snap,t('genDone',n));
     }catch(e){$('g-err').textContent=errMsg(e)}
     el.disabled=false;
@@ -779,8 +780,8 @@ async function reload(silent){
 /* ───────── demo backend (only used when the page is opened outside Apps Script) ───────── */
 const demo=(function(){
   const KEY='dctwin_demo_v2';
-  const DEF={RoomName:'قاعة التجربة / Pilot Room',DefaultTotalU:42,DefaultPowerCapKW:6,PlanPowerPct:80,PowerWarnPct:80,PowerCritPct:90,PlanTempC:26,TempWarnC:27,TempCritC:32,SpaceWarnPct:75,SpaceCritPct:90,StaleMinutes:0};
-  const RULES={DefaultTotalU:[1,60,1],DefaultPowerCapKW:[0.1,100],PlanPowerPct:[1,100],PowerWarnPct:[1,100],PowerCritPct:[1,150],PlanTempC:[10,45],TempWarnC:[10,50],TempCritC:[10,60],SpaceWarnPct:[1,100],SpaceCritPct:[1,100],StaleMinutes:[0,1440,1]};
+  const DEF={RoomName:'قاعة التجربة / Pilot Room',DefaultTotalU:42,DefaultPowerCapW:6000,PlanPowerPct:80,PowerWarnPct:80,PowerCritPct:90,PlanTempC:26,TempWarnC:27,TempCritC:32,SpaceWarnPct:75,SpaceCritPct:90,StaleMinutes:0};
+  const RULES={DefaultTotalU:[1,60,1],DefaultPowerCapW:[100,100000],PlanPowerPct:[1,100],PowerWarnPct:[1,100],PowerCritPct:[1,150],PlanTempC:[10,45],TempWarnC:[10,50],TempCritC:[10,60],SpaceWarnPct:[1,100],SpaceCritPct:[1,100],StaleMinutes:[0,1440,1]};
   const SAMPLE=[
    ['A01',24.1,[['core-sw-01','network',41,2,.4,'Active','10.20.0.1'],['fw-01','security',39,2,.5],['esx-01','server',30,2,.9,'Active','10.20.1.11'],['esx-02','server',28,2,.9,'Active','10.20.1.12'],['esx-03','server',26,2,.9],['san-01','storage',10,4,1.4]]],
    ['A02',24.8,[['esx-04','server',36,2,.9],['esx-05','server',34,2,.9],['esx-06','server',32,2,.9],['esx-07','server',30,2,.9],['erp-app-01','server',24,2,.8]]],
@@ -802,8 +803,8 @@ const demo=(function(){
   function addSample(){
     const now=new Date().toISOString();
     SAMPLE.forEach(r=>{
-      D.racks.push({RackID:r[0],Name:r[0],Row:r[0].charAt(0),Position:Number(r[0].slice(1)),TotalU:D.settings.DefaultTotalU,PowerCapKW:D.settings.DefaultPowerCapKW,InletTempC:r[1],ReadingAt:now,Notes:'Sample data'});
-      r[2].forEach(d=>D.devices.push({DeviceID:uid(),RackID:r[0],Name:d[0],Type:d[1],Status:d[5]||'Active',StartU:d[2],HeightU:d[3],PowerKW:d[4],Vendor:'',Model:'',Serial:'',AssetTag:'',IP:d[6]||'',Owner:'',Notes:'Sample data'}));
+      D.racks.push({RackID:r[0],Name:r[0],Row:r[0].charAt(0),Position:Number(r[0].slice(1)),TotalU:D.settings.DefaultTotalU,PowerCapW:D.settings.DefaultPowerCapW,InletTempC:r[1],ReadingAt:now,Notes:'Sample data'});
+      r[2].forEach(d=>D.devices.push({DeviceID:uid(),RackID:r[0],Name:d[0],Type:d[1],Status:d[5]||'Active',StartU:d[2],HeightU:d[3],PowerW:Math.round(d[4]*1000),Vendor:'',Model:'',Serial:'',AssetTag:'',IP:d[6]||'',Owner:'',Notes:'Sample data'}));
     });
   }
   load();
@@ -820,7 +821,7 @@ const demo=(function(){
     api_saveRack(r,isNew){
       const id=String(r.RackID||'').trim();if(!/^[A-Za-z0-9_-]{1,12}$/.test(id))fail('E_RACK_ID');
       const row=String(r.Row||'').trim();if(!row||row.length>6)fail('E_ROW');
-      const pos=int(r.Position,1,99,'E_POS'),tu=int(r.TotalU,1,60,'E_TOTALU'),cap=nm(r.PowerCapKW,0.1,100,'E_CAP');
+      const pos=int(r.Position,1,99,'E_POS'),tu=int(r.TotalU,1,60,'E_TOTALU'),cap=nm(r.PowerCapW,100,100000,'E_CAP');
       let inlet=null;if(r.InletTempC!==''&&r.InletTempC!=null)inlet=nm(r.InletTempC,0,60,'E_TEMP');
       const cur=D.racks.find(x=>x.RackID===id);
       if(isNew&&cur)fail('E_RACK_DUP',id);if(!isNew&&!cur)fail('E_RACK_NONE',id);if(isNew&&D.racks.length>=200)fail('E_LIMIT');
@@ -828,7 +829,7 @@ const demo=(function(){
       const ends=D.devices.filter(d=>d.RackID===id&&d.Status!=='Decommissioned').map(d=>d.StartU+d.HeightU-1);
       const maxEnd=ends.length?Math.max(...ends):0;if(maxEnd>tu)fail('E_RACK_SHRINK',maxEnd);
       let at=cur?cur.ReadingAt:'';if(inlet===null)at='';else if(!cur||cur.InletTempC!==inlet)at=new Date().toISOString();
-      const o={RackID:id,Name:String(r.Name||id).trim().slice(0,40),Row:row,Position:pos,TotalU:tu,PowerCapKW:cap,InletTempC:inlet,ReadingAt:at,Notes:String(r.Notes||'').slice(0,200)};
+      const o={RackID:id,Name:String(r.Name||id).trim().slice(0,40),Row:row,Position:pos,TotalU:tu,PowerCapW:cap,InletTempC:inlet,ReadingAt:at,Notes:String(r.Notes||'').slice(0,200)};
       if(cur)Object.assign(cur,o);else D.racks.push(o);persist();return snap();
     },
     api_deleteRack(id){
@@ -838,12 +839,12 @@ const demo=(function(){
     api_generateRacks(c){
       const rows=[];(c.rows||[]).forEach(x=>{x=String(x).trim();if(x&&!rows.includes(x))rows.push(x)});
       if(!rows.length||rows.length>10||rows.some(x=>!/^[A-Za-z0-9_-]{1,6}$/.test(x)))fail('E_GEN');
-      const per=int(c.perRow,1,30,'E_GEN'),tu=int(c.totalU,1,60,'E_TOTALU'),cap=nm(c.powerCapKW,0.1,100,'E_CAP');
+      const per=int(c.perRow,1,30,'E_GEN'),tu=int(c.totalU,1,60,'E_TOTALU'),cap=nm(c.powerCapW,100,100000,'E_CAP');
       const add=[];
       rows.forEach(rw=>{for(let i=1;i<=per;i++){
         const id=rw+(i<10?'0'+i:i);
         if(id.length>12||D.racks.some(x=>x.RackID===id||(x.Row===rw&&x.Position===i))||add.some(x=>x.RackID===id))continue;
-        add.push({RackID:id,Name:id,Row:rw,Position:i,TotalU:tu,PowerCapKW:cap,InletTempC:null,ReadingAt:'',Notes:''});
+        add.push({RackID:id,Name:id,Row:rw,Position:i,TotalU:tu,PowerCapW:cap,InletTempC:null,ReadingAt:'',Notes:''});
       }});
       if(D.racks.length+add.length>200)fail('E_LIMIT');
       D.racks.push(...add);persist();const s=snap();s.created=add.length;return s;
@@ -853,7 +854,7 @@ const demo=(function(){
       if(!TYPES.includes(d.Type))fail('E_DEV_TYPE');if(!STATUSES.includes(d.Status))fail('E_DEV_STATUS');
       const rid=String(d.RackID||'').trim(),rack=D.racks.find(x=>x.RackID===rid);if(!rack)fail('E_RACK_NONE',rid);
       const st=int(d.StartU,1,60,'E_DEV_U'),h=int(d.HeightU,1,60,'E_DEV_U');
-      const kw=(d.PowerKW===''||d.PowerKW==null)?0:nm(d.PowerKW,0,50,'E_DEV_KW');
+      const kw=(d.PowerW===''||d.PowerW==null)?0:nm(d.PowerW,0,50000,'E_DEV_W');
       const id0=String(d.DeviceID||''),cur=id0?D.devices.find(x=>x.DeviceID===id0):null;if(id0&&!cur)fail('E_DEV_NONE');
       if(d.Status!=='Decommissioned'){
         if(st+h-1>rack.TotalU)fail('E_DEV_RANGE',rack.TotalU);
@@ -861,7 +862,7 @@ const demo=(function(){
         if(cl)fail('E_DEV_OVERLAP',cl.Name);
       }
       const s=(x,n)=>String(x==null?'':x).trim().slice(0,n);
-      const o={DeviceID:cur?id0:uid(),RackID:rid,Name:name,Type:d.Type,Status:d.Status,StartU:st,HeightU:h,PowerKW:kw,Vendor:s(d.Vendor,60),Model:s(d.Model,60),Serial:s(d.Serial,60),AssetTag:s(d.AssetTag,40),IP:s(d.IP,45),Owner:s(d.Owner,80),Notes:s(d.Notes,300)};
+      const o={DeviceID:cur?id0:uid(),RackID:rid,Name:name,Type:d.Type,Status:d.Status,StartU:st,HeightU:h,PowerW:kw,Vendor:s(d.Vendor,60),Model:s(d.Model,60),Serial:s(d.Serial,60),AssetTag:s(d.AssetTag,40),IP:s(d.IP,45),Owner:s(d.Owner,80),Notes:s(d.Notes,300)};
       if(cur)Object.assign(cur,o);else D.devices.push(o);persist();return snap();
     },
     api_deleteDevice(id){
