@@ -192,7 +192,7 @@ footer .chip{background:rgba(255,255,255,.14)}
       <p id="sub"></p>
     </div>
     <div class="chips">
-      <span class="chip ver" id="verchip">v2.8</span>
+      <span class="chip ver" id="verchip">v2.9</span>
       <span class="chip" id="modechip" hidden></span>
       <span class="chip" id="userchip" hidden></span>
       <button class="btn" type="button" data-act="refresh" data-i="refresh">تحديث</button>
@@ -261,7 +261,7 @@ footer .chip{background:rgba(255,255,255,.14)}
   <div class="wrap">
     <span data-i="foot">النظام يقرأ بياناته من Google Sheet ويُحدَّث من صفحة الإعدادات.</span>
     <span style="display:flex;gap:12px;align-items:center">
-      <span class="chip" id="verfoot">v2.8</span>
+      <span class="chip" id="verfoot">v2.9</span>
       <a href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener">ITOC · IT Operations Center</a>
     </span>
   </div>
@@ -298,7 +298,7 @@ footer .chip{background:rgba(255,255,255,.14)}
 <script>
 (function(){
 'use strict';
-const APP_VERSION='2.8';
+const APP_VERSION='2.9';
 const IS_GAS=!!(window.google&&window.google.script&&window.google.script.run);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -750,7 +750,7 @@ function rackForm(r,isNew){
    `<label>${t('cap')}<input id="r-cap" class="ltr" type="number" min="100" max="100000" step="100" value="${esc(r.PowerCapW)}"></label>`+
    `<label>${t('inletF')}<input id="r-temp" class="ltr" type="number" min="0" max="60" step="0.1" value="${r.InletTempC==null?'':esc(r.InletTempC)}"><small>${esc(t('inletNote'))}</small></label>`+
    `<label class="full">${t('notes')}<textarea id="r-notes" maxlength="200" rows="2">${esc(r.Notes)}</textarea></label>`+
-   `<div class="photoedit"><div class="lbl">${t('photos')}</div>`+(isNew?`<p class="muted">${esc(t('photoSaveFirst'))}</p>`:`<div id="r-photos"></div><input type="file" id="r-file" accept="image/*" hidden><button type="button" class="btn" id="r-addph">${esc(t('photoAdd'))}</button> <small class="muted">${esc(t('photoHint',4))}</small>`)+`</div></div>`;
+   `<div class="photoedit"><div class="lbl">${t('photos')}</div>`+(isNew?`<p class="muted">${esc(t('photoSaveFirst'))}</p>`:`<div id="r-photos"></div><input type="file" id="r-file" accept="image/jpeg,image/png,image/webp" hidden><button type="button" class="btn" id="r-addph">${esc(t('photoAdd'))}</button> <small class="muted">${esc(t('photoHint',4))}</small>`)+`</div></div>`;
 }
 function openRackForm(id){
   const T=DB.settings,cur=id?rackById(id):null;
