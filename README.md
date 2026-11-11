@@ -1,4 +1,4 @@
-# التوأم الرقمي لمركز البيانات · Data Center Digital Twin — v2.4
+# التوأم الرقمي لمركز البيانات · Data Center Digital Twin — v2.5
 
 **SRU · ICTD · ITOC** — لوحة متابعة لرفوف مركز البيانات وأجهزتها، تُغذّى من **Google Sheet** عبر **Google Apps Script**، مع صفحة **إعدادات** لتسجيل الرفوف ومحتوى كل رف وبيانات كل جهاز وموقعه.
 
@@ -36,6 +36,13 @@ Apps Script Web App  (Code.gs + Index.html)  ──►  Google Sheet
 9. أضف بقية المستخدمين في الجدول **AllowedUsers** (عمود `Role`: `admin` أو `viewer`، وعمود `Active`: `yes`) · Add users.
 
 > عند أي تعديل لاحق على `Code.gs` أو `Index.html`: **Deploy → Manage deployments → Edit → New version** ليبقى الرابط نفسه · After edits, publish a new version of the same deployment.
+
+## صور الرفوف · Rack photos
+
+- من **الإعدادات ← تعديل رف** يمكن إضافة حتى 4 صور حقيقية لكل رف وحذفها. تظهر الصور لكل المستخدمين في تفاصيل الرف بالصفحة الرئيسية، وتُفتح بحجم كامل بالنقر عليها.
+- تُحفظ الصور في مجلد **DC Digital Twin Photos** في Drive الخاص بصاحب المشروع، وتُعرض عبر التطبيق فقط (لا روابط عامة)، فتتبع صلاحيات جدول AllowedUsers.
+- **بعد أول نشر لهذا الإصدار:** افتح Apps Script وشغّل الدالة `setup` مرة واحدة ووافق على صلاحية Google Drive.
+- Up to 4 photos per rack, added in *Settings → edit rack* and shown in the rack details with a full-size viewer. Photos live in a private Drive folder and are served only through the app. After the first deploy of this version, run `setup` once and approve the Drive permission.
 
 ## الصلاحيات · Access
 

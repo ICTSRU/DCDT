@@ -11,6 +11,16 @@ Versioning: one digit after the decimal point; after x.9 comes (x+1).0.
 **Changed · تغييرات**
 - Sign-in page moved from `landing/index.html` to the repository root `index.html`.
 
+## v2.5 — 2026-11-11
+
+**Added · إضافات**
+- **Rack photos:** up to 4 real photos per rack (e.g. front and rear). Add and delete them from *Settings → edit rack*; every user sees them in the rack details on the dashboard, with a full-size viewer (next/previous, Esc to close).
+- Photos are compressed in the browser (max 1600 px, JPEG) and stored privately in a Drive folder called *DC Digital Twin Photos* in the owner's Drive. They are served only through the app, so access follows the `AllowedUsers` list. A photo can only be read if it is registered on a rack.
+- New `Photos` column in the `Racks` sheet (added automatically to existing sheets). Deleting a rack moves its photos to the Drive trash. Photo changes are written to `ChangeLog`.
+
+**Needs one manual step · خطوة يدوية لمرة واحدة**
+- The script now uses Google Drive. After the first auto-deploy, the owner must open Apps Script, run the `setup` function once and approve the new Drive permission. Until then the dashboard may show an authorization error.
+
 ## v2.4 — 2026-11-11
 
 **Changed · تغييرات**

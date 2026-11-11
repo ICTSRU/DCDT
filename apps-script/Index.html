@@ -163,6 +163,21 @@ footer .chip{background:rgba(255,255,255,.14)}
 
 @media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.band h1{font-size:21px}.stat .v{font-size:16px}.form label{width:calc(50% - 5px)}}
+.photosec h3{margin:10px 0 4px;font-size:13px}
+.photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.pthumb{position:relative;width:104px;height:78px;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--bg);cursor:zoom-in;padding:0}
+.pthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pthumb.ld{cursor:default;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center}
+.pdel{position:absolute;top:3px;inset-inline-end:3px;min-width:22px;height:22px;border-radius:11px;border:0;background:rgba(0,0,0,.7);color:#fff;font-size:13px;line-height:22px;cursor:pointer;padding:0 5px}
+.pdel.arm{background:#c0392b}
+.photoedit{grid-column:1/-1}
+.photoedit .lbl{font-weight:600;margin-bottom:4px}
+#lightbox{z-index:80;align-items:center;background:rgba(10,5,20,.88)}
+.lb{display:flex;flex-direction:column;align-items:center;gap:10px;margin:auto;max-width:100%}
+.lb img{max-width:min(96vw,1400px);max-height:78vh;object-fit:contain;background:#000;border-radius:4px}
+.lbbar{display:flex;align-items:center;justify-content:center;gap:12px;color:#fff;direction:ltr}
+.lbbar button{border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.12);color:#fff;border-radius:4px;min-width:40px;height:36px;font-size:18px;cursor:pointer}
+.lbbar button:hover{background:rgba(255,255,255,.25)}
 </style>
 
 <header>
@@ -176,7 +191,7 @@ footer .chip{background:rgba(255,255,255,.14)}
       <p id="sub"></p>
     </div>
     <div class="chips">
-      <span class="chip ver" id="verchip">v2.4</span>
+      <span class="chip ver" id="verchip">v2.5</span>
       <span class="chip" id="modechip" hidden></span>
       <span class="chip" id="userchip" hidden></span>
       <button class="btn" type="button" data-act="refresh" data-i="refresh">تحديث</button>
@@ -245,7 +260,7 @@ footer .chip{background:rgba(255,255,255,.14)}
   <div class="wrap">
     <span data-i="foot">النظام يقرأ بياناته من Google Sheet ويُحدَّث من صفحة الإعدادات.</span>
     <span style="display:flex;gap:12px;align-items:center">
-      <span class="chip" id="verfoot">v2.4</span>
+      <span class="chip" id="verfoot">v2.5</span>
       <a href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener">ITOC · IT Operations Center</a>
     </span>
   </div>
@@ -262,12 +277,18 @@ footer .chip{background:rgba(255,255,255,.14)}
     </div>
   </div>
 </div>
+<div id="lightbox" class="overlay" hidden>
+  <div class="lb" role="dialog" aria-modal="true" aria-label="Rack photo">
+    <img id="lbimg" alt="">
+    <div class="lbbar"><button type="button" id="lbprev" aria-label="Previous">&#8249;</button><span id="lbcap"></span><button type="button" id="lbnext" aria-label="Next">&#8250;</button><button type="button" id="lbclose" aria-label="Close">&#215;</button></div>
+  </div>
+</div>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function(){
 'use strict';
-const APP_VERSION='2.4';
+const APP_VERSION='2.5';
 const IS_GAS=!!(window.google&&window.google.script&&window.google.script.run);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -318,12 +339,13 @@ ar:{
  sContentsTitle:'محتوى الرف وبيانات أجهزته',pickRack:'اختر الرف',addDevice:'إضافة جهاز',
  devName:'اسم الجهاز',devType:'النوع',devStatus:'الحالة',devRack:'الرف',startU:'بداية الموقع (U)',heightU:'الارتفاع (U)',powerW:'قدرة الجهاز (W)',vendor:'الشركة المصنعة',model:'الطراز',
  freeHint:s=>`المساحات الحرة في الرف: ${s}`,freeNone:'لا توجد مساحة حرة في الرف',devRule:'يُحتسب الجهاز في الطاقة إذا كانت حالته نشط أو صيانة، وفي المساحة ما لم يكن خارج الخدمة.',
+ photos:'صور الرف',photoAdd:'إضافة صورة',photoNone:'لا توجد صور لهذا الرف بعد.',photoHint:n=>`حتى ${n} صور لكل رف (مثلاً: أمامية وخلفية). تُضغط الصورة تلقائياً قبل الرفع.`,photoLoading:'جارٍ التحميل…',photoFail:'تعذر التحميل',photoOpen:'فتح الصورة',photoDel:'حذف الصورة',photoDelArm:'اضغط مرة أخرى للحذف',photoAdded:'تمت إضافة الصورة',photoDeleted:'تم حذف الصورة',photoUploading:'جارٍ رفع الصورة…',photoSaveFirst:'احفظ الرف أولاً ثم أضف صوره من نافذة التعديل.',
  sRoomTitle:'إعدادات القاعة وحدود التنبيه',fRoomName:'اسم القاعة',fDefU:'ارتفاع الرف الافتراضي (U)',fDefCap:'سعة طاقة الرف الافتراضية (W)',fPlanP:'حد التخطيط للطاقة (%)',fPwW:'تحذير الطاقة (%)',fPwC:'حرج الطاقة (%)',fPlanT:'حد التخطيط لحرارة الدخل (°م)',fTW:'تحذير الحرارة (°م)',fTC:'حرج الحرارة (°م)',fSpW:'تحذير المساحة (%)',fSpC:'حرج المساحة (%)',fStale:'تأخر القراءة بالدقائق (0 = معطل)',
  save:'حفظ',cancel:'إلغاء',saved:'تم الحفظ',deleted:'تم الحذف',confirmTitle:'تأكيد الحذف',del:'حذف',
  delRackMsg:(id,n)=>`سيُحذف الرف ${id} مع ${n} جهاز. لا يمكن التراجع.`,delDevMsg:n=>`سيُحذف الجهاز ${n}.`,
  addRackTitle:'إضافة رف',editRackTitle:id=>`تعديل الرف ${id}`,addDevTitle:'إضافة جهاز',editDevTitle:n=>`تعديل الجهاز ${n}`,
  errGeneric:'تعذر تنفيذ العملية.',errFatal:'تعذر تحميل البيانات.',
- err:{E_FORBIDDEN:'ليس لديك صلاحية الدخول.',E_ADMIN:'هذه العملية للمسؤولين فقط.',E_RACK_ID:'معرّف الرف: حروف إنجليزية وأرقام و - و _ فقط، حتى 12 خانة.',E_ROW:'الصف مطلوب (حتى 6 خانات).',E_POS:'الموضع رقم صحيح من 1 إلى 99.',E_TOTALU:'ارتفاع الرف رقم صحيح من 1 إلى 60.',E_CAP:'سعة الطاقة بين 100 و100000 W.',E_TEMP:'الحرارة بين 0 و60 °م.',
+ err:{E_PHOTO:'الملف ليس صورة صالحة (JPG أو PNG أو WebP).',E_PHOTO_MAX:'الحد الأقصى 4 صور لكل رف.',E_PHOTO_SIZE:'الصورة كبيرة جداً.',E_PHOTO_NONE:'الصورة غير موجودة.',E_PHOTO_DRIVE:x=>`تعذر الوصول إلى Google Drive. شغّل الدالة setup مرة واحدة من محرر Apps Script ووافق على الصلاحيات. ${x||''}`,E_FORBIDDEN:'ليس لديك صلاحية الدخول.',E_ADMIN:'هذه العملية للمسؤولين فقط.',E_RACK_ID:'معرّف الرف: حروف إنجليزية وأرقام و - و _ فقط، حتى 12 خانة.',E_ROW:'الصف مطلوب (حتى 6 خانات).',E_POS:'الموضع رقم صحيح من 1 إلى 99.',E_TOTALU:'ارتفاع الرف رقم صحيح من 1 إلى 60.',E_CAP:'سعة الطاقة بين 100 و100000 W.',E_TEMP:'الحرارة بين 0 و60 °م.',
   E_RACK_DUP:id=>`المعرّف ${id} مستخدم لرف آخر.`,E_RACK_NONE:id=>`الرف ${id} غير موجود.`,E_POS_DUP:id=>`هذا الموضع مشغول بالرف ${id}.`,E_RACK_SHRINK:u=>`لا يمكن تصغير الرف: يوجد جهاز يصل إلى U${u}.`,E_LIMIT:'تم بلوغ الحد الأقصى لعدد الرفوف.',
   E_DEV_NAME:'اسم الجهاز مطلوب (حتى 60 حرفاً).',E_DEV_TYPE:'نوع الجهاز غير صالح.',E_DEV_STATUS:'حالة الجهاز غير صالحة.',E_DEV_U:'الموقع والارتفاع أرقام صحيحة من 1 إلى 60.',E_DEV_W:'قدرة الجهاز بين 0 و50000 W.',E_DEV_RANGE:u=>`الجهاز يتجاوز ارتفاع الرف (${u} U).`,E_DEV_OVERLAP:n=>`الموقع يتداخل مع الجهاز ${n}.`,E_DEV_NONE:'الجهاز غير موجود.',
   E_GEN:'بيانات التوليد غير صالحة: صفوف حتى 10 (حروف وأرقام)، ورفوف حتى 30 في الصف.',E_SET:k=>`قيمة غير صالحة في الإعدادات: ${k}`,E_THRESH:'يجب أن يكون التحذير أقل من الحرج.',E_NOT_EMPTY:'توجد رفوف مسجلة، لا يمكن تحميل البيانات التجريبية.'}
@@ -356,12 +378,13 @@ en:{
  sContentsTitle:'Rack contents and device data',pickRack:'Choose rack',addDevice:'Add device',
  devName:'Device name',devType:'Type',devStatus:'Status',devRack:'Rack',startU:'Start position (U)',heightU:'Height (U)',powerW:'Device power (W)',vendor:'Vendor',model:'Model',
  freeHint:s=>`Free space in this rack: ${s}`,freeNone:'No free space in this rack',devRule:'A device counts toward power when Active or in Maintenance, and toward space unless Decommissioned.',
+ photos:'Rack photos',photoAdd:'Add photo',photoNone:'No photos for this rack yet.',photoHint:n=>`Up to ${n} photos per rack (for example front and rear). Photos are compressed automatically before upload.`,photoLoading:'Loading…',photoFail:'Could not load',photoOpen:'Open photo',photoDel:'Delete photo',photoDelArm:'Click again to delete',photoAdded:'Photo added',photoDeleted:'Photo deleted',photoUploading:'Uploading photo…',photoSaveFirst:'Save the rack first, then add its photos from the edit window.',
  sRoomTitle:'Room settings and alert limits',fRoomName:'Room name',fDefU:'Default rack height (U)',fDefCap:'Default rack power capacity (W)',fPlanP:'Power planning limit (%)',fPwW:'Power warning (%)',fPwC:'Power critical (%)',fPlanT:'Inlet planning limit (°C)',fTW:'Temperature warning (°C)',fTC:'Temperature critical (°C)',fSpW:'Space warning (%)',fSpC:'Space critical (%)',fStale:'Stale reading after minutes (0 = off)',
  save:'Save',cancel:'Cancel',saved:'Saved',deleted:'Deleted',confirmTitle:'Confirm deletion',del:'Delete',
  delRackMsg:(id,n)=>`Rack ${id} and its ${n} devices will be deleted. This cannot be undone.`,delDevMsg:n=>`Device ${n} will be deleted.`,
  addRackTitle:'Add rack',editRackTitle:id=>`Edit rack ${id}`,addDevTitle:'Add device',editDevTitle:n=>`Edit device ${n}`,
  errGeneric:'The action could not be completed.',errFatal:'Data could not be loaded.',
- err:{E_FORBIDDEN:'You do not have access.',E_ADMIN:'This action is for administrators only.',E_RACK_ID:'Rack ID: letters, digits, - and _ only, up to 12 characters.',E_ROW:'Row is required (up to 6 characters).',E_POS:'Position must be a whole number from 1 to 99.',E_TOTALU:'Rack height must be a whole number from 1 to 60.',E_CAP:'Power capacity must be between 100 and 100000 W.',E_TEMP:'Temperature must be between 0 and 60 °C.',
+ err:{E_PHOTO:'The file is not a valid image (JPG, PNG or WebP).',E_PHOTO_MAX:'A rack can have at most 4 photos.',E_PHOTO_SIZE:'The image is too large.',E_PHOTO_NONE:'Photo not found.',E_PHOTO_DRIVE:x=>`Could not reach Google Drive. Run the setup function once from the Apps Script editor and approve the permissions. ${x||''}`,E_FORBIDDEN:'You do not have access.',E_ADMIN:'This action is for administrators only.',E_RACK_ID:'Rack ID: letters, digits, - and _ only, up to 12 characters.',E_ROW:'Row is required (up to 6 characters).',E_POS:'Position must be a whole number from 1 to 99.',E_TOTALU:'Rack height must be a whole number from 1 to 60.',E_CAP:'Power capacity must be between 100 and 100000 W.',E_TEMP:'Temperature must be between 0 and 60 °C.',
   E_RACK_DUP:id=>`ID ${id} is already used by another rack.`,E_RACK_NONE:id=>`Rack ${id} does not exist.`,E_POS_DUP:id=>`That position is taken by rack ${id}.`,E_RACK_SHRINK:u=>`Cannot shrink the rack: a device reaches U${u}.`,E_LIMIT:'The maximum number of racks has been reached.',
   E_DEV_NAME:'Device name is required (up to 60 characters).',E_DEV_TYPE:'Invalid device type.',E_DEV_STATUS:'Invalid device status.',E_DEV_U:'Start position and height must be whole numbers from 1 to 60.',E_DEV_W:'Device power must be between 0 and 50000 W.',E_DEV_RANGE:u=>`The device goes beyond the rack height (${u} U).`,E_DEV_OVERLAP:n=>`The location overlaps device ${n}.`,E_DEV_NONE:'Device does not exist.',
   E_GEN:'Invalid generation data: up to 10 rows (letters or digits) and up to 30 racks per row.',E_SET:k=>`Invalid settings value: ${k}`,E_THRESH:'Warning must be lower than critical.',E_NOT_EMPTY:'Racks already exist, so sample data cannot be loaded.'}
@@ -542,7 +565,8 @@ function renderDetail(){
    `<div class="stats"><div class="stat"><div class="l">${t('power')}</div><div class="v">${val(fW(r.kw)+' / '+fW(r.PowerCapW),'W')}</div></div>`+
    `<div class="stat"><div class="l">${t('inlet')}</div><div class="v">${r.t===null?'—':val(f1(r.t),'°C')}</div></div>`+
    `<div class="stat"><div class="l">${t('space')}</div><div class="v">${val(r.usedU+' / '+r.TotalU,'U')}</div></div></div>`+
-   (r.devs.length?`<div class="scroll"><table><thead><tr><th>${t('device')}</th><th>${t('type')}</th><th>${t('loc')}</th><th>${t('vendorModel')}</th><th>${t('ip')}</th><th>${t('kw')}</th><th>${t('status')}</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<p class="muted">${esc(t('noDevices'))}</p>`)+card+`</div></div>`;
+   (r.devs.length?`<div class="scroll"><table><thead><tr><th>${t('device')}</th><th>${t('type')}</th><th>${t('loc')}</th><th>${t('vendorModel')}</th><th>${t('ip')}</th><th>${t('kw')}</th><th>${t('status')}</th></tr></thead><tbody>${rows}</tbody></table></div>`:`<p class="muted">${esc(t('noDevices'))}</p>`)+card+photosBlock(r)+`</div></div>`;
+  fillThumbs($('detail'));
 }
 function runSearch(){
   const q=S.q.trim().toLowerCase();
@@ -634,6 +658,73 @@ function toast(msg,bad){
 }
 function commit(snap,msg){apply(snap);renderAll();if(msg)toast(msg)}
 
+/* ───────── rack photos ───────── */
+const PH={};let LB={rack:null,idx:0},EDIT_RACK=null;
+async function photoData(id){if(PH[id])return PH[id];const r=await call('api_getRackPhoto',id);PH[id]=r.data;return r.data}
+function thumbHtml(id,rack,del){
+  return `<div class="pthumb ld" data-pid="${esc(id)}" data-prack="${esc(rack)}" tabindex="0" role="button" aria-label="${esc(t('photoOpen'))}"><span class="pl">${esc(t('photoLoading'))}</span>`+
+   (del?`<button type="button" class="pdel" data-pdel="${esc(id)}" aria-label="${esc(t('photoDel'))}">&#215;</button>`:'')+`</div>`;
+}
+function fillThumbs(root){
+  root.querySelectorAll('.pthumb.ld').forEach(el=>{
+    photoData(el.dataset.pid).then(d=>{
+      const im=new Image();im.src=d;im.alt=el.dataset.prack;
+      const pl=el.querySelector('.pl');if(pl)pl.replaceWith(im);el.classList.remove('ld');
+    }).catch(()=>{const pl=el.querySelector('.pl');if(pl)pl.textContent=t('photoFail')});
+  });
+}
+function photosBlock(r){
+  if(!r.Photos||!r.Photos.length)return '';
+  return `<div class="photosec"><h3>${esc(t('photos'))} (${r.Photos.length})</h3><div class="photos">${r.Photos.map(id=>thumbHtml(id,r.RackID,false)).join('')}</div></div>`;
+}
+async function showLb(){
+  const r=rackById(LB.rack);if(!r||!r.Photos.length){closeLb();return}
+  const n=r.Photos.length;LB.idx=(LB.idx+n)%n;
+  $('lbcap').textContent=r.RackID+' · '+(LB.idx+1)+' / '+n;
+  $('lbprev').hidden=$('lbnext').hidden=n<2;
+  $('lbimg').alt=r.RackID;$('lbimg').removeAttribute('src');
+  try{const id=r.Photos[LB.idx],d=await photoData(id);if(r.Photos[LB.idx]===id)$('lbimg').src=d}catch(e){$('lbcap').textContent=t('photoFail')}
+}
+function openLb(rack,id){const r=rackById(rack);if(!r)return;LB={rack,idx:Math.max(0,r.Photos.indexOf(id))};$('lightbox').hidden=false;showLb();$('lbclose').focus()}
+function closeLb(){$('lightbox').hidden=true;$('lbimg').removeAttribute('src')}
+function resizeImage(file){
+  return new Promise((res,rej)=>{
+    if(!/^image\//.test(file.type||''))return rej(new Error('E_PHOTO'));
+    const fr=new FileReader();fr.onerror=()=>rej(new Error('E_PHOTO'));
+    fr.onload=()=>{
+      const im=new Image();im.onerror=()=>rej(new Error('E_PHOTO'));
+      im.onload=()=>{
+        const k=Math.min(1,1600/Math.max(im.width,im.height)),w=Math.max(1,Math.round(im.width*k)),h=Math.max(1,Math.round(im.height*k));
+        const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
+        x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);
+        let q=.82,u=c.toDataURL('image/jpeg',q);
+        while(u.length>3800000&&q>.4){q-=.1;u=c.toDataURL('image/jpeg',q)}
+        res(u);
+      };
+      im.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function renderPhotoEditor(id){
+  const r=rackById(id),box=$('r-photos');if(!box||!r)return;
+  box.innerHTML=`<div class="photos">${r.Photos.map(p=>thumbHtml(p,id,true)).join('')||`<span class="muted">${esc(t('photoNone'))}</span>`}</div>`;
+  $('r-addph').disabled=r.Photos.length>=4;
+  fillThumbs(box);
+}
+async function addPhoto(id,file){
+  const b=$('r-addph');if(b)b.disabled=true;$('merr').textContent='';toast(t('photoUploading'));
+  try{const url=await resizeImage(file);commit(await call('api_addRackPhoto',id,url),t('photoAdded'))}
+  catch(e){$('merr').textContent=errMsg(e)}
+  const f=$('r-file');if(f)f.value='';renderPhotoEditor(id);
+}
+async function delPhoto(id,pid){
+  $('merr').textContent='';
+  try{commit(await call('api_deleteRackPhoto',id,pid),t('photoDeleted'));delete PH[pid]}
+  catch(e){$('merr').textContent=errMsg(e)}
+  renderPhotoEditor(id);
+}
+
 /* forms */
 const v=id=>($(id).value||'').trim();
 function rackForm(r,isNew){
@@ -645,7 +736,8 @@ function rackForm(r,isNew){
    `<label>${t('totalU')}<input id="r-u" dir="ltr" type="number" min="1" max="60" step="1" value="${esc(r.TotalU)}"></label>`+
    `<label>${t('cap')}<input id="r-cap" dir="ltr" type="number" min="100" max="100000" step="100" value="${esc(r.PowerCapW)}"></label>`+
    `<label>${t('inletF')}<input id="r-temp" dir="ltr" type="number" min="0" max="60" step="0.1" value="${r.InletTempC==null?'':esc(r.InletTempC)}"><small>${esc(t('inletNote'))}</small></label>`+
-   `<label class="full">${t('notes')}<textarea id="r-notes" maxlength="200" rows="2">${esc(r.Notes)}</textarea></label></div>`;
+   `<label class="full">${t('notes')}<textarea id="r-notes" maxlength="200" rows="2">${esc(r.Notes)}</textarea></label>`+
+   `<div class="photoedit"><div class="lbl">${t('photos')}</div>`+(isNew?`<p class="muted">${esc(t('photoSaveFirst'))}</p>`:`<div id="r-photos"></div><input type="file" id="r-file" accept="image/*" hidden><button type="button" class="btn" id="r-addph">${esc(t('photoAdd'))}</button> <small class="muted">${esc(t('photoHint',4))}</small>`)+`</div></div>`;
 }
 function openRackForm(id){
   const T=DB.settings,cur=id?rackById(id):null;
@@ -660,6 +752,8 @@ function openRackForm(id){
     if(!cur)S.cRack=v('r-id');
     commit(snap,t('saved'));
   }});
+  EDIT_RACK=cur?cur.RackID:null;
+  if(cur)renderPhotoEditor(cur.RackID);
 }
 function updFree(){
   const el=$('d-free');if(!el)return;
@@ -736,6 +830,8 @@ document.addEventListener('click',e=>{
   if(el.dataset.rack||el.dataset.dev){renderPlan();renderDetail();if(el.closest('#sres,#alerts,#wi'))$('detail').scrollIntoView({block:'nearest',behavior:'smooth'})}
 });
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!$('lightbox').hidden){closeLb();return}
+  if(!$('lightbox').hidden&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){LB.idx+=e.key==='ArrowRight'?1:-1;showLb();return}
   if(e.key==='Escape'&&!$('modal').hidden){closeModal();return}
   if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('g.rack,g.edev')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}))}
 });
@@ -746,6 +842,24 @@ document.addEventListener('change',e=>{
 document.addEventListener('input',e=>{
   if(e.target.id==='q'){S.q=e.target.value;runSearch()}
   if(['wu','wk','showfit'].includes(e.target.id)){renderWi();renderPlan()}
+});
+document.addEventListener('click',e=>{
+  const d=e.target.closest('.pdel');
+  if(d){
+    e.stopPropagation();
+    if(d.classList.contains('arm')){delPhoto(d.closest('.pthumb').dataset.prack,d.dataset.pdel);return}
+    d.classList.add('arm');d.textContent=t('photoDelArm');
+    setTimeout(()=>{if(d.isConnected){d.classList.remove('arm');d.textContent='\u00d7'}},3500);return;
+  }
+  const th=e.target.closest('.pthumb');
+  if(th&&!th.classList.contains('ld'))openLb(th.dataset.prack,th.dataset.pid);
+  if(e.target.id==='r-addph')$('r-file').click();
+  if(e.target.id==='lbprev'){LB.idx--;showLb()}
+  if(e.target.id==='lbnext'){LB.idx++;showLb()}
+  if(e.target.id==='lbclose'||e.target.id==='lightbox')closeLb();
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='r-file'&&e.target.files&&e.target.files[0]&&EDIT_RACK)addPhoto(EDIT_RACK,e.target.files[0]);
 });
 $('mcancel').addEventListener('click',closeModal);
 $('msave').addEventListener('click',runModalSave);
@@ -762,7 +876,7 @@ function chrome(){
   const u=$('userchip');u.hidden=!ME.email;u.innerHTML=ME.email?`<span dir="ltr">${esc(ME.email)}</span> · ${esc(ME.role==='admin'?t('roleAdmin'):t('roleViewer'))}`:'';
   document.title=t('title');
 }
-function apply(s){DB.settings=s.settings;DB.racks=s.racks;DB.devices=s.devices;if(s.user)ME=s.user;LASTSYNC=new Date();enrich()}
+function apply(s){DB.settings=s.settings;DB.racks=s.racks.map(r=>r.Photos?r:Object.assign({},r,{Photos:[]}));DB.devices=s.devices;if(s.user)ME=s.user;LASTSYNC=new Date();enrich()}
 function renderAll(){
   if(!LOADED)return;
   $('loading').hidden=true;chrome();
@@ -793,6 +907,9 @@ const demo=(function(){
    ['B03',22.0,[['idm-01','server',30,1,.3],['dns-01','server',29,1,.2],['jump-01','server',28,1,.3]]],
    ['B04',24.0,[['esx-21','server',36,2,.9],['esx-22','server',34,2,.9],['esx-23','server',32,2,.9],['tape-01','storage',14,4,.7,'Planned']]],
    ['B05',22.8,[['web-01','server',36,1,.3],['web-02','server',35,1,.3],['app-02','server',30,2,.7]]]];
+  const PKEY='dctwin_demo_photos_v2';let P={};
+  try{P=JSON.parse(localStorage.getItem(PKEY)||'{}')}catch(e){}
+  const pper=()=>{try{localStorage.setItem(PKEY,JSON.stringify(P))}catch(e){fail('E_PHOTO_DRIVE','browser storage is full')}};
   let D=null;
   const fail=(c,x)=>{throw new Error(c+(x!==undefined?'|'+x:''))};
   const int=(x,a,b,c)=>{const n=Number(x);if(x===''||x==null||!isFinite(n)||Math.floor(n)!==n||n<a||n>b)fail(c);return n};
@@ -812,6 +929,19 @@ const demo=(function(){
   const snap=()=>JSON.parse(JSON.stringify({settings:D.settings,racks:D.racks,devices:D.devices}));
   return{
     api_bootstrap(){const s=snap();s.version=APP_VERSION;s.user={email:'demo@sr.edu.sa',role:'admin'};return s},
+    api_addRackPhoto(id,url){
+      const m=/^data:image\/(jpeg|png|webp);base64,/.exec(String(url||'').slice(0,40));if(!m)fail('E_PHOTO');
+      const r=D.racks.find(x=>x.RackID===id);if(!r)fail('E_RACK_NONE',id);
+      r.Photos=r.Photos||[];if(r.Photos.length>=4)fail('E_PHOTO_MAX');
+      const pid='P'+Math.random().toString(36).slice(2,10);P[pid]=url;
+      try{pper()}catch(e){delete P[pid];throw e}
+      r.Photos.push(pid);persist();return snap();
+    },
+    api_getRackPhoto(pid){if(!P[pid])fail('E_PHOTO_NONE');return{id:pid,data:P[pid]}},
+    api_deleteRackPhoto(id,pid){
+      const r=D.racks.find(x=>x.RackID===id);if(!r||!(r.Photos||[]).includes(pid))fail('E_PHOTO_NONE');
+      r.Photos=r.Photos.filter(x=>x!==pid);delete P[pid];pper();persist();return snap();
+    },
     api_saveSettings(s){
       const o={RoomName:String(s.RoomName||'').trim().slice(0,60)||DEF.RoomName};
       Object.keys(RULES).forEach(k=>{const r=RULES[k],n=Number(s[k]);if(s[k]===''||s[k]==null||!isFinite(n)||n<r[0]||n>r[1]||(r[2]&&Math.floor(n)!==n))fail('E_SET',k);o[k]=n});
