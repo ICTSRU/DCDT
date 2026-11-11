@@ -1,0 +1,60 @@
+name: Deploy Apps Script
+
+# Every push that touches apps-script/ updates the Apps Script project and
+# re-deploys it to the SAME web-app deployment, so the /exec URL never changes.
+on:
+  push:
+    branches: [main]
+    paths: ['apps-script/**']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-apps-script
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+      DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        run: |
+          for v in SCRIPT_ID DEPLOYMENT_ID; do
+            [ -n "${!v}" ] || { echo "::error::Missing repository secret $v"; exit 1; }
+          done
+          [ -n "${{ secrets.CLASPRC_JSON }}" ] || { echo "::error::Missing repository secret CLASPRC_JSON"; exit 1; }
+
+      - name: Sanity-check the code
+        run: |
+          for f in Code.gs Index.html appsscript.json; do test -s "apps-script/$f" || { echo "::error::apps-script/$f is missing or empty"; exit 1; }; done
+          node -e "JSON.parse(require('fs').readFileSync('apps-script/appsscript.json','utf8'))"
+          cp apps-script/Code.gs /tmp/check.js && node --check /tmp/check.js
+          grep -o "APP_VERSION *= *'[0-9.]*'" apps-script/Code.gs
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install clasp
+        run: npm install -g @google/clasp@2
+
+      - name: Authenticate clasp
+        run: |
+          printf '%s' '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
+          printf '{"scriptId":"%s","rootDir":"."}' "$SCRIPT_ID" > apps-script/.clasp.json
+
+      - name: Push code
+        working-directory: apps-script
+        run: clasp push --force
+
+      - name: Update the existing web-app deployment
+        working-directory: apps-script
+        run: clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "GitHub ${GITHUB_SHA::7} · $(date -u +%Y-%m-%d)"
+
+      - name: Save refreshed credentials note
+        if: always()
+        run: echo "If this job fails with an auth error, refresh the CLASPRC_JSON secret (see README → Automatic deployment)."
