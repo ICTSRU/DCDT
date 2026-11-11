@@ -191,7 +191,7 @@ footer .chip{background:rgba(255,255,255,.14)}
       <p id="sub"></p>
     </div>
     <div class="chips">
-      <span class="chip ver" id="verchip">v2.6</span>
+      <span class="chip ver" id="verchip">v2.7</span>
       <span class="chip" id="modechip" hidden></span>
       <span class="chip" id="userchip" hidden></span>
       <button class="btn" type="button" data-act="refresh" data-i="refresh">تحديث</button>
@@ -260,7 +260,7 @@ footer .chip{background:rgba(255,255,255,.14)}
   <div class="wrap">
     <span data-i="foot">النظام يقرأ بياناته من Google Sheet ويُحدَّث من صفحة الإعدادات.</span>
     <span style="display:flex;gap:12px;align-items:center">
-      <span class="chip" id="verfoot">v2.6</span>
+      <span class="chip" id="verfoot">v2.7</span>
       <a href="https://ictsru.github.io/ITOC/#forms" target="_blank" rel="noopener">ITOC · IT Operations Center</a>
     </span>
   </div>
@@ -286,9 +286,18 @@ footer .chip{background:rgba(255,255,255,.14)}
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
+/* boot diagnostics: shows the real reason on the loading card instead of an endless spinner */
+(function(){
+  function show(m){var el=document.getElementById('loading');if(el){el.hidden=false;el.textContent=m}}
+  window.addEventListener('error',function(e){if(!window.__loaded)show('JS error: '+(e.message||'unknown')+(e.lineno?' (line '+e.lineno+')':''))});
+  window.addEventListener('unhandledrejection',function(e){if(!window.__loaded)show('Error: '+String((e.reason&&e.reason.message)||e.reason||'').slice(0,200))});
+  setTimeout(function(){if(!window.__booted&&!window.__loaded)show('The page script did not start. Hard-refresh (Ctrl+F5) or open the link in a private window. If this stays, send this message to ITOC. [no-boot]')},6000);
+})();
+</script>
+<script>
 (function(){
 'use strict';
-const APP_VERSION='2.6';
+const APP_VERSION='2.7';
 const IS_GAS=!!(window.google&&window.google.script&&window.google.script.run);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -893,7 +902,7 @@ function renderAll(){
 async function reload(silent){
   let tm=null;
   if(!LOADED)tm=setTimeout(()=>{if(!LOADED){$('loading').hidden=false;$('loading').textContent=t('slowLoad')}},15000);
-  try{apply(await call('api_bootstrap'));clearTimeout(tm);LOADED=true;renderAll();if(!silent)toast(t('refresh')+' ✓')}
+  try{apply(await call('api_bootstrap'));clearTimeout(tm);LOADED=true;window.__loaded=1;renderAll();if(!silent)toast(t('refresh')+' ✓')}
   catch(e){clearTimeout(tm);if(!LOADED){$('loading').hidden=false;$('loading').textContent=t('errFatal')+' '+errMsg(e)}else if(!silent)toast(errMsg(e),true)}
 }
 /* ───────── demo backend (only used when the page is opened outside Apps Script) ───────── */
@@ -1009,6 +1018,7 @@ const demo=(function(){
 })();
 
 /* ───────── start (after the demo backend exists) ───────── */
+window.__booted=1;
 chrome();
 reload(true);
 setInterval(()=>{if(S.tab==='dash'&&!document.hidden&&$('modal').hidden&&LOADED)reload(true)},60000);

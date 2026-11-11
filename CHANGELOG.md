@@ -11,6 +11,11 @@ Versioning: one digit after the decimal point; after x.9 comes (x+1).0.
 **Changed · تغييرات**
 - Sign-in page moved from `landing/index.html` to the repository root `index.html`.
 
+## v2.7 — 2026-11-11
+
+**Added · إضافات**
+- Boot diagnostics: if the page script fails to start or throws, the real message is shown on the loading card (with `[no-boot]` if nothing started within 6 seconds) instead of an endless "Loading data…".
+
 ## v2.6 — 2026-11-11
 
 **Fixed · إصلاحات**
